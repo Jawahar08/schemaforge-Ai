@@ -45,3 +45,9 @@ yarn-error.log*
 coverage/
 .nyc_output
 *.pem
+
+.env
+.env.local
+.env.*
+
+

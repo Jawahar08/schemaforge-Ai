@@ -1,0 +1,376 @@
+[33mcommit 797baa192d662293ceb7e1f5411b0ffb95028cfc[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m
+Author: Jawahar Bharathi <cjawaharbharathi@gmail.com>
+Date:   Mon Jun 15 14:20:12 2026 +0530
+
+    feat: complete schema management and versioning system
+
+[1mdiff --git a/backend/src/main/java/com/schemaforge/ai/client/AiProviderClient.java b/backend/src/main/java/com/schemaforge/ai/client/AiProviderClient.java[m
+[1mnew file mode 100644[m
+[1mindex 0000000..794118f[m
+[1m--- /dev/null[m
+[1m+++ b/backend/src/main/java/com/schemaforge/ai/client/AiProviderClient.java[m
+[36m@@ -0,0 +1,27 @@[m
+[32m+[m[32mpackage com.schemaforge.ai.client;[m
+[32m+[m
+[32m+[m[32mimport com.schemaforge.ai.entity.AiProvider;[m
+[32m+[m
+[32m+[m[32mimport java.util.List;[m
+[32m+[m[32mimport java.util.Map;[m
+[32m+[m
+[32m+[m[32mpublic interface AiProviderClient {[m
+[32m+[m
+[32m+[m[32m    AiProvider getProviderType();[m
+[32m+[m
+[32m+[m[32m    /**[m
+[32m+[m[32m     * Generates a complete schema (tables, relationships, normalization notes,[m
+[32m+[m[32m     * analysis items) from a natural-language system description.[m
+[32m+[m[32m     */[m
+[32m+[m[32m    AiSchemaGenerationResult generateSchema(String systemDescription, String normalizationTarget);[m
+[32m+[m
+[32m+[m[32m    /**[m
+[32m+[m[32m     * Generates normalization analysis (1NF-BCNF) for an existing set of tables.[m
+[32m+[m[32m     */[m
+[32m+[m[32m    List<Map<String, Object>> generateNormalization(List<Map<String, Object>> tables, String normalizationTarget);[m
+[32m+[m
+[32m+[m[32m    /**[m
+[32m+[m[32m     * Generates schema review / analysis items for an existing set of tables and relationships.[m
+[32m+[m[32m     */[m
+[32m+[m[32m    List<Map<String, Object>> generateAnalysis(List<Map<String, Object>> tables, List<Map<String, Object>> relationships);[m
+[32m+[m[32m}[m
+\ No newline at end of file[m
+[1mdiff --git a/backend/src/main/java/com/schemaforge/ai/client/AiProviderClientFactory.java b/backend/src/main/java/com/schemaforge/ai/client/AiProviderClientFactory.java[m
+[1mnew file mode 100644[m
+[1mindex 0000000..a16bc72[m
+[1m--- /dev/null[m
+[1m+++ b/backend/src/main/java/com/schemaforge/ai/client/AiProviderClientFactory.java[m
+[36m@@ -0,0 +1,36 @@[m
+[32m+[m[32mpackage com.schemaforge.ai.client;[m
+[32m+[m
+[32m+[m[32mimport com.schemaforge.ai.entity.AiProvider;[m
+[32m+[m[32mimport com.schemaforge.ai.exception.UnsupportedAiProviderException;[m
+[32m+[m[32mimport lombok.RequiredArgsConstructor;[m
+[32m+[m[32mimport org.springframework.stereotype.Component;[m
+[32m+[m
+[32m+[m[32mimport java.util.List;[m
+[32m+[m[32mimport java.util.Map;[m
+[32m+[m[32mimport java.util.function.Function;[m
+[32m+[m[32mimport java.util.stream.Collectors;[m
+[32m+[m
+[32m+[m[32m@Component[m
+[32m+[m[32m@RequiredArgsConstructor[m
+[32m+[m[32mpublic class AiProviderClientFactory {[m
+[32m+[m
+[32m+[m[32m    private final List<AiProviderClient> clients;[m
+[32m+[m
+[32m+[m[32m    private Map<AiProvider, AiProviderClient> clientsByProvider;[m
+[32m+[m
+[32m+[m[32m    private Map<AiProvider, AiProviderClient> getClientsByProvider() {[m
+[32m+[m[32m        if (clientsByProvider == null) {[m
+[32m+[m[32m            clientsByProvider = clients.stream()[m
+[32m+[m[32m                    .collect(Collectors.toMap(AiProviderClient::getProviderType, Function.identity()));[m
+[32m+[m[32m        }[m
+[32m+[m[32m        return clientsByProvider;[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    public AiProviderClient getClient(AiProvider provider) {[m
+[32m+[m[32m        AiProviderClient client = getClientsByProvider().get(provider);[m
+[32m+[m[32m        if (client == null) {[m
+[32m+[m[32m            throw new UnsupportedAiProviderException(provider != null ? provider.name() : "null");[m
+[32m+[m[32m        }[m
+[32m+[m[32m        return client;[m
+[32m+[m[32m    }[m
+[32m+[m[32m}[m
+\ No newline at end of file[m
+[1mdiff --git a/backend/src/main/java/com/schemaforge/ai/client/AiResponseParser.java b/backend/src/main/java/com/schemaforge/ai/client/AiResponseParser.java[m
+[1mnew file mode 100644[m
+[1mindex 0000000..3fa4dbb[m
+[1m--- /dev/null[m
+[1m+++ b/backend/src/main/java/com/schemaforge/ai/client/AiResponseParser.java[m
+[36m@@ -0,0 +1,59 @@[m
+[32m+[m[32mpackage com.schemaforge.ai.client;[m
+[32m+[m
+[32m+[m[32mimport com.fasterxml.jackson.core.type.TypeReference;[m
+[32m+[m[32mimport com.fasterxml.jackson.databind.ObjectMapper;[m
+[32m+[m[32mimport org.springframework.stereotype.Component;[m
+[32m+[m
+[32m+[m[32mimport java.util.List;[m
+[32m+[m[32mimport java.util.Map;[m
+[32m+[m
+[32m+[m[32m@Component[m
+[32m+[m[32mpublic class AiResponseParser {[m
+[32m+[m
+[32m+[m[32m    private final ObjectMapper objectMapper;[m
+[32m+[m
+[32m+[m[32m    public AiResponseParser(ObjectMapper objectMapper) {[m
+[32m+[m[32m        this.objectMapper = objectMapper;[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    public Map<String, Object> parseObject(String rawText) {[m
+[32m+[m[32m        try {[m
+[32m+[m[32m            String cleaned = stripCodeFences(rawText);[m
+[32m+[m[32m            return objectMapper.readValue(cleaned, new TypeReference<Map<String, Object>>() {[m
+[32m+[m[32m            });[m
+[32m+[m[32m        } catch (Exception ex) {[m
+[32m+[m[32m            throw new IllegalArgumentException("Unable to parse AI response as JSON object: " + ex.getMessage(), ex);[m
+[32m+[m[32m        }[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    public List<Map<String, Object>> parseArray(String rawText) {[m
+[32m+[m[32m        try {[m
+[32m+[m[32m            String cleaned = stripCodeFences(rawText);[m
+[32m+[m[32m            return objectMapper.readValue(cleaned, new TypeReference<List<Map<String, Object>>>() {[m
+[32m+[m[32m            });[m
+[32m+[m[32m        } catch (Exception ex) {[m
+[32m+[m[32m            throw new IllegalArgumentException("Unable to parse AI response as JSON array: " + ex.getMessage(), ex);[m
+[32m+[m[32m        }[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    @SuppressWarnings("unchecked")[m
+[32m+[m[32m    public List<Map<String, Object>> extractList(Map<String, Object> parent, String key) {[m
+[32m+[m[32m        Object value = parent.get(key);[m
+[32m+[m[32m        if (value instanceof List<?> list) {[m
+[32m+[m[32m            return (List<Map<String, Object>>) list;[m
+[32m+[m[32m        }[m
+[32m+[m[32m        return List.of();[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    private String stripCodeFences(String rawText) {[m
+[32m+[m[32m        String trimmed = rawText.trim();[m
+[32m+[m[32m        if (trimmed.startsWith("```")) {[m
+[32m+[m[32m            int firstNewline = trimmed.indexOf('\n');[m
+[32m+[m[32m            int lastFence = trimmed.lastIndexOf("```");[m
+[32m+[m[32m            if (firstNewline != -1 && lastFence > firstNewline) {[m
+[32m+[m[32m                trimmed = trimmed.substring(firstNewline + 1, lastFence).trim();[m
+[32m+[m[32m            }[m
+[32m+[m[32m        }[m
+[32m+[m[32m        return trimmed;[m
+[32m+[m[32m    }[m
+[32m+[m[32m}[m
+\ No newline at end of file[m
+[1mdiff --git a/backend/src/main/java/com/schemaforge/ai/client/AiSchemaGenerationResult.java b/backend/src/main/java/com/schemaforge/ai/client/AiSchemaGenerationResult.java[m
+[1mnew file mode 100644[m
+[1mindex 0000000..b4eda6f[m
+[1m--- /dev/null[m
+[1m+++ b/backend/src/main/java/com/schemaforge/ai/client/AiSchemaGenerationResult.java[m
+[36m@@ -0,0 +1,19 @@[m
+[32m+[m[32mpackage com.schemaforge.ai.client;[m
+[32m+[m
+[32m+[m[32mimport java.util.List;[m
+[32m+[m[32mimport java.util.Map;[m
+[32m+[m
+[32m+[m[32mpublic record AiSchemaGenerationResult([m
+[32m+[m[32m        String systemName,[m
+[32m+[m[32m        String description,[m
+[32m+[m[32m        List<Map<String, Object>> tables,[m
+[32m+[m[32m        List<Map<String, Object>> relationships,[m
+[32m+[m[32m        List<Map<String, Object>> normalizationNotes,[m
+[32m+[m[32m        List<Map<String, Object>> analysisItems,[m
+[32m+[m[32m        String rawResponse,[m
+[32m+[m[32m        String modelUsed,[m
+[32m+[m[32m        int promptTokens,[m
+[32m+[m[32m        int completionTokens,[m
+[32m+[m[32m        long latencyMs[m
+[32m+[m[32m) {[m
+[32m+[m[32m}[m
+\ No newline at end of file[m
+[1mdiff --git a/backend/src/main/java/com/schemaforge/ai/client/PromptBuilder.java b/backend/src/main/java/com/schemaforge/ai/client/PromptBuilder.java[m
+[1mnew file mode 100644[m
+[1mindex 0000000..5b85527[m
+[1m--- /dev/null[m
+[1m+++ b/backend/src/main/java/com/schemaforge/ai/client/PromptBuilder.java[m
+[36m@@ -0,0 +1,97 @@[m
+[32m+[m[32mpackage com.schemaforge.ai.client;[m
+[32m+[m
+[32m+[m[32mimport org.springframework.stereotype.Component;[m
+[32m+[m
+[32m+[m[32mimport java.util.List;[m
+[32m+[m[32mimport java.util.Map;[m
+[32m+[m
+[32m+[m[32m@Component[m
+[32m+[m[32mpublic class PromptBuilder {[m
+[32m+[m
+[32m+[m[32m    public String buildSchemaGenerationPrompt(String systemDescription, String normalizationTarget) {[m
+[32m+[m[32m        return """[m
+[32m+[m[32m                You are a senior database architect. Analyze the following system description and generate a complete, production-ready database schema.[m
+[32m+[m
+[32m+[m[32m                System description: "%s"[m
+[32m+[m
+[32m+[m[32m                Requirements:[m
+[32m+[m[32m                - Normalize to %s[m
+[32m+[m[32m                - Use UUID for primary keys (type: "UUID")[m
+[32m+[m[32m                - Add created_at and updated_at TIMESTAMP columns to every table[m
+[32m+[m[32m                - Include recommended indexes where appropriate[m
+[32m+[m
+[32m+[m[32m                Respond with ONLY a JSON object (no markdown, no code fences, no extra commentary) in this exact format:[m
+[32m+[m[32m                {[m
+[32m+[m[32m                  "systemName": "brief system name",[m
+[32m+[m[32m                  "description": "one sentence about the system",[m
+[32m+[m[32m                  "tables": [[m
+[32m+[m[32m                    {[m
+[32m+[m[32m                      "name": "table_name",[m
+[32m+[m[32m                      "description": "what this table stores",[m
+[32m+[m[32m                      "fields": [[m
+[32m+[m[32m                        {[m
+[32m+[m[32m                          "name": "field_name",[m
+[32m+[m[32m                          "type": "DATA_TYPE",[m
+[32m+[m[32m                          "constraints": ["PRIMARY KEY", "NOT NULL", "UNIQUE"],[m
+[32m+[m[32m                          "description": "what this field stores",[m
+[32m+[m[32m                          "references": "other_table.field (only if foreign key)"[m
+[32m+[m[32m                        }[m
+[32m+[m[32m                      ],[m
+[32m+[m[32m                      "indexes": ["CREATE INDEX idx_... ON table_name(column)"][m
+[32m+[m[32m                    }[m
+[32m+[m[32m                  ],[m
+[32m+[m[32m                  "relationships": [[m
+[32m+[m[32m                    {"from": "table1", "to": "table2", "type": "one-to-many", "description": "how they relate"}[m
+[32m+[m[32m                  ],[m
+[32m+[m[32m                  "normalizationNotes": [[m
+[32m+[m[32m                    {"level": "1NF", "status": "satisfied", "notes": "brief explanation"},[m
+[32m+[m[32m                    {"level": "2NF", "status": "satisfied", "notes": "brief explanation"},[m
+[32m+[m[32m                    {"level": "3NF", "status": "satisfied", "notes": "brief explanation"},[m
+[32m+[m[32m                    {"level": "BCNF", "status": "satisfied", "notes": "brief explanation"}[m
+[32m+[m[32m                  ],[m
+[32m+[m[32m                  "analysisItems": [[m
+[32m+[m[32m                    {"type": "success", "title": "...", "description": "..."}[m
+[32m+[m[32m                  ][m
+[32m+[m[32m                }[m
+[32m+[m[32m                """.formatted(systemDescription, normalizationTarget.toUpperCase());[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    public String buildNormalizationPrompt(List<Map<String, Object>> tables, String normalizationTarget) {[m
+[32m+[m[32m        return """[m
+[32m+[m[32m                You are a database normalization expert. Analyze the following tables and produce a normalization[m
+[32m+[m[32m                report up to %s.[m
+[32m+[m
+[32m+[m[32m                Tables (JSON): %s[m
+[32m+[m
+[32m+[m[32m                Respond with ONLY a JSON array (no markdown, no code fences) in this exact format:[m
+[32m+[m[32m                [[m
+[32m+[m[32m                  {"level": "1NF", "status": "satisfied", "notes": "brief explanation"},[m
+[32m+[m[32m                  {"level": "2NF", "status": "satisfied", "notes": "brief explanation"},[m
+[32m+[m[32m                  {"level": "3NF", "status": "satisfied", "notes": "brief explanation"},[m
+[32m+[m[32m                  {"level": "BCNF", "status": "satisfied", "notes": "brief explanation"}[m
+[32m+[m[32m                ][m
+[32m+[m
+[32m+[m[32m                "status" must be one of: "satisfied", "violation", "partial".[m
+[32m+[m[32m                """.formatted(normalizationTarget.toUpperCase(), tables);[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    public String buildAnalysisPrompt(List<Map<String, Object>> tables, List<Map<String, Object>> relationships) {[m
+[32m+[m[32m        return """[m
+[32m+[m[32m                You are a senior database reviewer. Analyze the following schema for missing relationships,[m
+[32m+[m[32m                redundant tables, poor normalization, and naming issues.[m
+[32m+[m
+[32m+[m[32m                Tables (JSON): %s[m
+[32m+[m
+[32m+[m[32m                Relationships (JSON): %s[m
+[32m+[m
+[32m+[m[32m                Respond with ONLY a JSON array (no markdown, no code fences) in this exact format:[m
+[32m+[m[32m                [[m
+[32m+[m[32m                  {"type": "success", "title": "...", "description": "..."},[m
+[32m+[m[32m                  {"type": "warning", "title": "...", "description": "..."},[m
+[32m+[m[32m                  {"type": "info", "title": "...", "description": "..."}[m
+[32m+[m[32m                ][m
+[32m+[m
+[32m+[m[32m                "type" must be one of: "success", "warning", "info", "error".[m
+[32m+[m[32m                """.formatted(tables, relationships);[m
+[32m+[m[32m    }[m
+[32m+[m[32m}[m
+\ No newline at end of file[m
+[1mdiff --git a/backend/src/main/java/com/schemaforge/ai/client/impl/ClaudeProviderClient.java b/backend/src/main/java/com/schemaforge/ai/client/impl/ClaudeProviderClient.java[m
+[1mnew file mode 100644[m
+[1mindex 0000000..ff8ad21[m
+[1m--- /dev/null[m
+[1m+++ b/backend/src/main/java/com/schemaforge/ai/client/impl/ClaudeProviderClient.java[m
+[36m@@ -0,0 +1,165 @@[m
+[32m+[m[32mpackage com.schemaforge.ai.client.impl;[m
+[32m+[m
+[32m+[m[32mimport com.schemaforge.ai.client.AiProviderClient;[m
+[32m+[m[32mimport com.schemaforge.ai.client.AiResponseParser;[m
+[32m+[m[32mimport com.schemaforge.ai.client.AiSchemaGenerationResult;[m
+[32m+[m[32mimport com.schemaforge.ai.client.PromptBuilder;[m
+[32m+[m[32mimport com.schemaforge.ai.entity.AiProvider;[m
+[32m+[m[32mimport com.schemaforge.ai.exception.AiGenerationException;[m
+[32m+[m[32mimport lombok.extern.slf4j.Slf4j;[m
+[32m+[m[32mimport org.springframework.beans.factory.annotation.Qualifier;[m
+[32m+[m[32mimport org.springframework.beans.factory.annotation.Value;[m
+[32m+[m[32mimport org.springframework.stereotype.Component;[m
+[32m+[m[32mimport org.springframework.web.client.RestClient;[m
+[32m+[m
+[32m+[m[32mimport java.util.List;[m
+[32m+[m[32mimport java.util.Map;[m
+[32m+[m
+[32m+[m[32m@Slf4j[m
+[32m+[m[32m@Component[m
+[32m+[m[32mpublic class ClaudeProviderClient implements AiProviderClient {[m
+[32m+[m
+[32m+[m[32m    private final RestClient restClient;[m
+[32m+[m[32m    private final PromptBuilder promptBuilder;[m
+[32m+[m[32m    private final AiResponseParser responseParser;[m
+[32m+[m[32m    private final String apiKey;[m
+[32m+[m[32m    private final String model;[m
+[32m+[m
+[32m+[m[32m    public ClaudeProviderClient([m
+[32m+[m[32m            @Qualifier("claudeRestClient") RestClient restClient,[m
+[32m+[m[32m            PromptBuilder promptBuilder,[m
+[32m+[m[32m            AiResponseParser responseParser,[m
+[32m+[m[32m            @Value("${ai.claude.api-key}") String apiKey,[m
+[32m+[m[32m            @Value("${ai.claude.model}") String model[m
+[32m+[m[32m    ) {[m
+[32m+[m[32m        this.restClient = restClient;[m
+[32m+[m[32m        this.promptBuilder = promptBuilder;[m
+[32m+[m[32m        this.responseParser = responseParser;[m
+[32m+[m[32m        this.apiKey = apiKey;[m
+[32m+[m[32m        this.model = model;[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    @Override[m
+[32m+[m[32m    public AiProvider getProviderType() {[m
+[32m+[m[32m        return AiProvider.CLAUDE;[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    @Override[m
+[32m+[m[32m    public AiSchemaGenerationResult generateSchema(String systemDescription, String normalizationTarget) {[m
+[32m+[m[32m        String prompt = promptBuilder.buildSchemaGenerationPrompt(systemDescription, normalizationTarget);[m
+[32m+[m[32m        long start = System.currentTimeMillis();[m
+[32m+[m
+[32m+[m[32m        Map<String, Object> body = Map.of([m
+[32m+[m[32m                "model", model,[m
+[32m+[m[32m                "max_tokens", 4000,[m
+[32m+[m[32m                "messages", List.of(Map.of("role", "user", "content", prompt))[m
+[32m+[m[32m        );[m
+[32m+[m
+[32m+[m[32m        try {[m
+[32m+[m[32m            @SuppressWarnings("unchecked")[m
+[32m+[m[32m            Map<String, Object> rawResponse = restClient.post()[m
+[32m+[m[32m                    .uri("/v1/messages")[m
+[32m+[m[32m                    .header("x-api-key", apiKey)[m
+[32m+[m[32m                    .header("anthropic-version", "2023-06-01")[m
+[32m+[m[32m                    .body(body)[m
+[32m+[m[32m                    .retrieve()[m
+[32m+[m[32m                    .body(Map.class);[m
+[32m+[m
+[32m+[m[32m            long latency = System.currentTimeMillis() - start;[m
+[32m+[m[32m            String text = extractTextContent(rawResponse);[m
+[32m+[m[32m            Map<String, Object> parsed = responseParser.parseObject(text);[m
+[32m+[m
+[32m+[m[32m            Map<String, Object> usage = (Map<String, Object>) rawResponse.getOrDefault("usage", Map.of());[m
+[32m+[m[32m            int promptTokens = ((Number) usage.getOrDefault("input_tokens", 0)).intValue();[m
+[32m+[m[32m            int completionTokens = ((Number) usage.getOrDefault("output_tokens", 0)).intValue();[m
+[32m+[m
+[32m+[m[32m            return new AiSchemaGenerationResult([m
+[32m+[m[32m                    (String) parsed.get("systemName"),[m
+[32m+[m[32m                    (String) parsed.get("description"),[m
+[32m+[m[32m                    responseParser.extractList(parsed, "tables"),[m
+[32m+[m[32m                    responseParser.extractList(parsed, "relationships"),[m
+[32m+[m[32m                    responseParser.extractList(parsed, "normalizationNotes"),[m
+[32m+[m[32m                    responseParser.extractList(parsed, "analysisItems"),[m
+[32m+[m[32m                    text,[m
+[32m+[m[32m                    model,[m
+[32m+[m[32m                    promptTokens,[m
+[32m+[m[32m                    completionTokens,[m
+[32m+[m[32m                    latency[m
+[32m+[m[32m            );[m
+[32m+[m[32m        } catch (Exception ex) {[m
+[32m+[m[32m            log.error("Claude schema generation failed: {}", ex.getMessage(), ex);[m
+[32m+[m[32m            throw new AiGenerationEx
