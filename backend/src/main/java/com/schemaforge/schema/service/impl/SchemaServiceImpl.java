@@ -146,7 +146,11 @@ public class SchemaServiceImpl implements SchemaService {
     }
 
     @Override
-    public List<SchemaVersionSummaryResponse> getVersionHistory(User owner, UUID schemaId) {
+@Transactional(readOnly = true)
+public List<SchemaVersionSummaryResponse> getVersionHistory(
+        User owner,
+        UUID schemaId
+)  {
         schemaRepository.findActiveByIdAndOwnerId(schemaId, owner.getId())
                 .orElseThrow(() -> new SchemaNotFoundException(schemaId));
 

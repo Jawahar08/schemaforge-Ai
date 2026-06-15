@@ -1,22 +1,96 @@
 spring:
+  application:
+    name: schemaforge-api
+
   datasource:
-    url: jdbc:postgresql://localhost:5432/schemaforge
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/schemaforge}
     username: postgres
     password: Chellapandian@008
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 30000
+      idle-timeout: 600000
 
   jpa:
     hibernate:
       ddl-auto: validate
-    show-sql: true
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+        jdbc:
+          time_zone: UTC
+    show-sql: false
 
   flyway:
     enabled: true
+    baseline-on-migrate: true
     locations: classpath:db/migration
+
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+  jackson:
+    default-property-inclusion: non_null
+    serialization:
+      write-dates-as-timestamps: false
+
+server:
+  port: ${PORT:8080}
+  error:
+    include-message: always
+    include-binding-errors: always
+
 application:
   security:
     jwt:
-      secret-key: 7f8e9d4c3b2a1f9876543210abcdef1234567890abcdef1234567890abcdef
-      expiration: 86400000
+      secret-key: ${JWT_SECRET:7d9f4a6b2c1e8f5a9d3c7b1e6f2a8d4c9b5e1f7a3d6c8b2e9f4a1c7d5e8f3b6}
+      expiration: ${JWT_EXPIRATION:900000} # 15 minutes in ms
 
-server:
-  port: 8080
+ai:
+  claude:
+    base-url: ${CLAUDE_BASE_URL:https://api.anthropic.com}
+    api-key: ${CLAUDE_API_KEY:}
+    model: ${CLAUDE_MODEL:claude-sonnet-4-20250514}
+  openai:
+    base-url: ${OPENAI_BASE_URL:https://api.openai.com}
+    api-key: ${OPENAI_API_KEY:}
+    model: ${OPENAI_MODEL:gpt-4o-mini}
+  gemini:
+    base-url: ${GEMINI_BASE_URL:https://generativelanguage.googleapis.com}
+    api-key: ${GEMINI_API_KEY:}
+    model: ${GEMINI_MODEL:gemini-1.5-flash}
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operationsSorter: method
+    tagsSorter: alpha
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: when-authorized
+
+logging:
+  level:
+    root: INFO
+    com.schemaforge: DEBUG
+    org.hibernate.SQL: WARN
