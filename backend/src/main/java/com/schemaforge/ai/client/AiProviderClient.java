@@ -5,6 +5,7 @@ import com.schemaforge.ai.entity.AiProvider;
 import java.util.List;
 import java.util.Map;
 
+
 public interface AiProviderClient {
 
     AiProvider getProviderType();
@@ -24,4 +25,5 @@ public interface AiProviderClient {
      * Generates schema review / analysis items for an existing set of tables and relationships.
      */
     List<Map<String, Object>> generateAnalysis(List<Map<String, Object>> tables, List<Map<String, Object>> relationships);
+    
 }

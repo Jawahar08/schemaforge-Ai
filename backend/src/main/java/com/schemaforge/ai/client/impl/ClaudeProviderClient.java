@@ -6,6 +6,8 @@ import com.schemaforge.ai.client.AiSchemaGenerationResult;
 import com.schemaforge.ai.client.PromptBuilder;
 import com.schemaforge.ai.entity.AiProvider;
 import com.schemaforge.ai.exception.AiGenerationException;
+
+import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -54,6 +56,7 @@ public class ClaudeProviderClient implements AiProviderClient {
                 "max_tokens", 4000,
                 "messages", List.of(Map.of("role", "user", "content", prompt))
         );
+        
 
         try {
             @SuppressWarnings("unchecked")
@@ -162,4 +165,10 @@ public class ClaudeProviderClient implements AiProviderClient {
         }
         return builder.toString();
     }
+    @PostConstruct
+public void checkKey() {
+    log.info("Claude key starts with: {}",
+            apiKey.substring(0, Math.min(15, apiKey.length())));
+}
+    
 }
