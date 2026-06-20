@@ -359,6 +359,7 @@ Full Stack Developer | Spring Boot Developer | AI Application Builder
 
 ⭐ Star this repository if you find it useful.
 
-Building the future of AI-assisted database architecture.
+"Accelerate hire. Unlock human potential. Build the future of teams."
+Made with ❤️ by Jawahar Bharathi
 
 </div>
