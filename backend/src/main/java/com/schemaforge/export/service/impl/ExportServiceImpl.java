@@ -12,6 +12,8 @@ import com.schemaforge.export.repository.ExportRepository;
 import com.schemaforge.export.service.ExportService;
 import com.schemaforge.export.strategy.ExportDialectStrategy;
 import com.schemaforge.export.strategy.ExportStrategyFactory;
+import com.schemaforge.notification.entity.NotificationType;
+import com.schemaforge.notification.service.NotificationService;
 import com.schemaforge.schema.entity.Schema;
 import com.schemaforge.schema.exception.SchemaNotFoundException;
 import com.schemaforge.schema.repository.SchemaRepository;
@@ -23,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.Map;
 import java.util.UUID;
 
 @Slf4j
@@ -34,6 +37,7 @@ public class ExportServiceImpl implements ExportService {
     private final ExportRepository exportRepository;
     private final ExportStrategyFactory strategyFactory;
     private final ExportMapper exportMapper;
+    private final NotificationService notificationService;
 
     @Override
     @Transactional
@@ -91,6 +95,23 @@ public class ExportServiceImpl implements ExportService {
 
         log.info("Export created: id={} schema={} dialect={} size={}B",
                 saved.getId(), schemaId, request.dialect(), sizeBytes);
+
+        // Notify the user that their export is ready.
+        try {
+            notificationService.createNotification(
+                    requestedBy.getId(),
+                    NotificationType.EXPORT_READY,
+                    "Export ready",
+                    "Your " + request.dialect() + " export for schema \"" + schema.getSystemName() + "\" is ready.",
+                    Map.of(
+                            "exportId", saved.getId().toString(),
+                            "schemaId", schemaId.toString(),
+                            "dialect", request.dialect().name()
+                    )
+            );
+        } catch (Exception ex) {
+            log.warn("Failed to create EXPORT_READY notification for user {}: {}", requestedBy.getId(), ex.getMessage());
+        }
 
         return exportMapper.toResponse(saved);
     }

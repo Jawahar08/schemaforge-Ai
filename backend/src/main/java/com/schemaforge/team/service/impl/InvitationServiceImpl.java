@@ -1,6 +1,8 @@
 package com.schemaforge.team.service.impl;
 
 import com.schemaforge.common.exception.BadRequestException;
+import com.schemaforge.notification.entity.NotificationType;
+import com.schemaforge.notification.service.NotificationService;
 import com.schemaforge.team.dto.CreateInvitationRequest;
 import com.schemaforge.team.dto.InvitationResponse;
 import com.schemaforge.team.entity.Invitation;
@@ -26,6 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -39,6 +42,7 @@ public class InvitationServiceImpl implements InvitationService {
     private final UserRepository userRepository;
     private final InvitationMapper invitationMapper;
     private final TeamAuthHelper teamAuthHelper;
+    private final NotificationService notificationService;
 
     @Override
     @Transactional
@@ -87,6 +91,25 @@ public class InvitationServiceImpl implements InvitationService {
 
         Invitation saved = invitationRepository.save(invitation);
         log.info("Invitation created for: {} to team: {} by user: {} (token: {})", request.email(), teamId, currentUser.getId(), token);
+
+        // Notify the invited user if they already have an account.
+        try {
+            invitedUserOpt.ifPresent(invitedUser ->
+                    notificationService.createNotification(
+                            invitedUser.getId(),
+                            NotificationType.TEAM_INVITATION,
+                            "You've been invited to join a team",
+                            currentUser.getFullName() + " invited you to join team \"" + team.getName() + "\"",
+                            Map.of(
+                                    "teamId", teamId.toString(),
+                                    "invitationToken", token
+                            )
+                    )
+            );
+        } catch (Exception ex) {
+            log.warn("Failed to create TEAM_INVITATION notification for email {}: {}", request.email(), ex.getMessage());
+        }
+
         return invitationMapper.toResponse(saved);
     }
 
@@ -144,6 +167,23 @@ public class InvitationServiceImpl implements InvitationService {
         invitationRepository.save(invitation);
 
         log.info("User: {} accepted invitation: {} for team: {}", currentUser.getId(), invitation.getId(), invitation.getTeam().getId());
+
+        // Notify the team owner that the invitation was accepted.
+        try {
+            UUID teamOwnerId = invitation.getTeam().getOwner().getId();
+            notificationService.createNotification(
+                    teamOwnerId,
+                    NotificationType.TEAM_INVITATION,
+                    "Invitation accepted",
+                    currentUser.getFullName() + " accepted the invitation to join team \"" + invitation.getTeam().getName() + "\"",
+                    Map.of(
+                            "teamId", invitation.getTeam().getId().toString(),
+                            "userId", currentUser.getId().toString()
+                    )
+            );
+        } catch (Exception ex) {
+            log.warn("Failed to create invitation-accepted notification for team {}: {}", invitation.getTeam().getId(), ex.getMessage());
+        }
     }
 
     @Override

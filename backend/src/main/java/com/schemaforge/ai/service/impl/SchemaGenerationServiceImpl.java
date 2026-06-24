@@ -10,6 +10,8 @@ import com.schemaforge.ai.entity.AiRequestStatus;
 import com.schemaforge.ai.entity.AiRequestType;
 import com.schemaforge.ai.repository.AiRequestRepository;
 import com.schemaforge.ai.service.SchemaGenerationService;
+import com.schemaforge.notification.entity.NotificationType;
+import com.schemaforge.notification.service.NotificationService;
 import com.schemaforge.schema.dto.CreateSchemaRequest;
 import com.schemaforge.schema.dto.SchemaResponse;
 import com.schemaforge.schema.entity.NormalizationTarget;
@@ -27,6 +29,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collections;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -40,6 +43,7 @@ public class SchemaGenerationServiceImpl implements SchemaGenerationService {
     private final SchemaService schemaService;
     private final SchemaRepository schemaRepository;
     private final AiRequestRepository aiRequestRepository;
+    private final NotificationService notificationService;
 
     // Self-injection via @Lazy breaks the circular dependency and ensures calls to
     // persistGenerationResult() and recordFailedRequestInNewTransaction() go through
@@ -121,6 +125,23 @@ public class SchemaGenerationServiceImpl implements SchemaGenerationService {
         log.info("Schema generated via {} for project {}: schema id={}",
                 provider, request.projectId(), savedSchema.getId());
 
+        // Notify user of successful schema generation.
+        try {
+            notificationService.createNotification(
+                    user.getId(),
+                    NotificationType.SCHEMA_GENERATED,
+                    "Schema generated successfully",
+                    "Your AI schema \"" + savedSchema.getSystemName() + "\" was generated successfully via " + provider,
+                    Map.of(
+                            "schemaId", savedSchema.getId().toString(),
+                            "projectId", request.projectId().toString(),
+                            "provider", provider.name()
+                    )
+            );
+        } catch (Exception ex) {
+            log.warn("Failed to create SCHEMA_GENERATED notification for user {}: {}", user.getId(), ex.getMessage());
+        }
+
         return schemaResponse;
     }
 
@@ -149,6 +170,23 @@ public class SchemaGenerationServiceImpl implements SchemaGenerationService {
 
         aiRequestRepository.save(aiRequest);
         log.warn("Recorded failed AI request audit for user={} provider={}", user.getId(), provider);
+
+        // Notify user that schema generation failed.
+        try {
+            notificationService.createNotification(
+                    user.getId(),
+                    NotificationType.SCHEMA_GENERATED,
+                    "Schema generation failed",
+                    "Schema generation via " + provider + " failed: " + errorMessage,
+                    Map.of(
+                            "projectId", request.projectId().toString(),
+                            "provider", provider.name(),
+                            "error", errorMessage != null ? errorMessage : "unknown"
+                    )
+            );
+        } catch (Exception ex) {
+            log.warn("Failed to create SCHEMA_GENERATED failure notification for user {}: {}", user.getId(), ex.getMessage());
+        }
     }
 
     private String buildPromptSummary(GenerateSchemaRequest request) {
