@@ -1,365 +1,406 @@
-# 🧠 SchemaForge Ai
+# SchemaForge AI
 
 <div align="center">
 
-![Status](https://img.shields.io/badge/Status-In%20Development-orange?style=for-the-badge)
-![Java](https://img.shields.io/badge/Java-21-red?style=for-the-badge\&logo=openjdk)
-![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5-green?style=for-the-badge\&logo=springboot)
-![Next.js](https://img.shields.io/badge/Next.js-15-black?style=for-the-badge\&logo=nextdotjs)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue?style=for-the-badge\&logo=postgresql)
-![License](https://img.shields.io/badge/License-MIT-purple?style=for-the-badge)
+### AI-Powered Database Design Platform
 
-# SchemaForge Ai
+Generate production-ready database schemas from natural language, collaborate with your team, export SQL for multiple databases, and manage projects through a modern AI-powered backend.
 
-### Transform Plain English Into Production-Ready Database Architectures
-
-An AI-powered platform that converts natural language requirements into database schemas, ER diagrams, SQL scripts, normalization reports, and technical documentation.
+![Java](https://img.shields.io/badge/Java-21-orange)
+![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.5-green)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-blue)
+![Redis](https://img.shields.io/badge/Redis-Cache-red)
+![Docker](https://img.shields.io/badge/Docker-Ready-blue)
+![License](https://img.shields.io/badge/License-MIT-green)
 
 </div>
 
 ---
 
-## 🚀 Overview
+# Overview
 
-ModelMind AI is an AI-powered database architecture platform designed to bridge the gap between business requirements and database design.
+SchemaForge AI is an enterprise-grade backend platform that converts natural language requirements into normalized relational database schemas using AI.
 
-Instead of manually identifying entities, relationships, primary keys, foreign keys, constraints, and normalization rules, users can simply describe their system in natural language.
+The platform provides complete project management, schema versioning, SQL export, team collaboration, notifications, comments, authentication, and role-based access control.
 
-### Example Input
+Designed using a modular Spring Boot architecture with production-ready coding practices.
 
-```text
-Build an e-commerce platform where customers place orders,
-products belong to categories,
-sellers manage inventory,
-and payments are tracked.
+---
+
+# Features
+
+## AI Schema Generation
+
+- Generate database schemas from natural language
+- AI-powered table and relationship generation
+- Intelligent normalization
+- Project-based schema management
+- Schema version tracking
+
+---
+
+## Authentication
+
+- JWT Authentication
+- Refresh Token Support
+- BCrypt Password Encryption
+- Secure Spring Security Configuration
+- Role-Based Authorization
+
+---
+
+## Project Management
+
+- Create Projects
+- Update Projects
+- Delete Projects
+- Archive Projects
+- Project Ownership
+
+---
+
+## Schema Management
+
+- Multiple Schemas per Project
+- Version History
+- Schema Metadata
+- AI Generated Descriptions
+- Ownership Validation
+
+---
+
+## SQL Export Engine
+
+Generate production-ready SQL for:
+
+- PostgreSQL
+- MySQL
+- Oracle
+- SQL Server
+
+Export tracking includes:
+
+- Export history
+- Export status
+- Downloadable SQL
+- Metadata storage
+
+---
+
+## Comments Module
+
+Collaborative schema discussions
+
+Features
+
+- Create Comments
+- Update Comments
+- Delete Comments
+- Thread Support
+- Entity References
+- Edit Tracking
+- Permission Validation
+
+---
+
+## Teams & Collaboration
+
+Workspace management
+
+Features
+
+- Create Teams
+- Team Members
+- Roles
+- Invitations
+- Workspace Ownership
+- Slug Generation
+- Collaboration APIs
+
+Roles
+
+- OWNER
+- ADMIN
+- MEMBER
+- VIEWER
+
+---
+
+## Notifications
+
+Real-time notifications
+
+Automatically generated when:
+
+- Schema Generated
+- Export Completed
+- Comment Added
+- Team Invitation Created
+- Invitation Accepted
+
+Endpoints
+
+- Get Notifications
+- Get Unread
+- Mark Read
+- Mark All Read
+- Delete Notification
+
+---
+
+## Security
+
+- Spring Security
+- JWT Filters
+- Route Authorization
+- User Ownership Validation
+- Team Permission Validation
+
+---
+
+## Database
+
+- PostgreSQL
+- Flyway Migrations
+- UUID Primary Keys
+- JSONB Metadata
+- Optimized Indexes
+- Cascade Relationships
+
+---
+
+# Architecture
+
+```
+Client
+   │
+   ▼
+Spring Boot REST API
+   │
+   ├── Authentication
+   ├── Projects
+   ├── Schemas
+   ├── AI Generation
+   ├── SQL Export
+   ├── Teams
+   ├── Comments
+   ├── Notifications
+   └── Security
+        │
+        ▼
+ PostgreSQL
 ```
 
-### Generated Output
+---
 
-* Database Tables
-* Columns & Data Types
-* Primary Keys
-* Foreign Keys
-* Entity Relationships
-* SQL Scripts
-* ER Diagrams
-* Normalization Analysis
-* Technical Documentation
+# Tech Stack
+
+## Backend
+
+- Java 21
+- Spring Boot 3.5
+- Spring Security
+- Spring Data JPA
+- Hibernate
+- MapStruct
+- Lombok
+- Validation API
+
+## Database
+
+- PostgreSQL
+- Flyway
+
+## AI
+
+- Google Gemini API
+- Claude API (Supported)
+
+## Build
+
+- Maven
+
+## Documentation
+
+- Swagger UI
+- OpenAPI 3
 
 ---
 
-## ✨ Features
+# Project Structure
 
-### 🧠 AI Schema Generation
+```
+src/main/java/com/schemaforge
 
-Generate complete relational database schemas from plain English descriptions.
-
-### 🗄️ Multi-Database SQL Generation
-
-Generate SQL scripts for:
-
-* PostgreSQL
-* MySQL
-* SQL Server
-* Oracle
-
-### 📊 ER Diagram Generation
-
-Visualize database relationships automatically using interactive ER diagrams.
-
-### 🔍 AI Schema Review
-
-Analyze generated schemas and identify:
-
-* Missing Relationships
-* Redundant Tables
-* Naming Issues
-* Design Problems
-* Normalization Issues
-
-### 📚 Documentation Generator
-
-Generate detailed technical documentation automatically.
-
-### 📈 Normalization Assistant
-
-Evaluate schemas against:
-
-* First Normal Form (1NF)
-* Second Normal Form (2NF)
-* Third Normal Form (3NF)
-* Boyce-Codd Normal Form (BCNF)
-
-### 🕒 Schema Versioning
-
-Track schema changes and compare historical versions.
-
-### 💬 AI Schema Chat
-
-Interact with generated schemas using AI.
-
-Example:
-
-```text
-Why was the Orders table created?
-
-Explain all foreign key relationships.
-
-Suggest indexing improvements.
-
-How can this schema be optimized?
+├── ai
+├── auth
+├── comment
+├── common
+├── config
+├── export
+├── notification
+├── project
+├── schema
+├── security
+├── team
+└── user
 ```
 
 ---
 
-## 🏗️ System Architecture
+# REST Modules
 
-```text
-┌─────────────────────────────┐
-│         Next.js 15          │
-│      Frontend Client        │
-└──────────────┬──────────────┘
-               │
-               ▼
-┌─────────────────────────────┐
-│      Spring Boot API        │
-│      Business Services      │
-└──────────────┬──────────────┘
-               │
-               ▼
-┌─────────────────────────────┐
-│    AI Orchestration Layer   │
-│ Claude • Gemini • OpenAI    │
-└──────────────┬──────────────┘
-               │
-               ▼
-┌─────────────────────────────┐
-│ PostgreSQL • Flyway • Redis │
-└─────────────────────────────┘
+| Module | Status |
+|---------|--------|
+| Authentication | ✅ |
+| Users | ✅ |
+| Projects | ✅ |
+| Schema Generation | ✅ |
+| AI Integration | ✅ |
+| SQL Export | ✅ |
+| Comments | ✅ |
+| Teams | ✅ |
+| Notifications | ✅ |
+| Security | ✅ |
+
+---
+
+# API Documentation
+
+Swagger
+
+```
+http://localhost:8080/swagger-ui/index.html
+```
+
+OpenAPI
+
+```
+http://localhost:8080/v3/api-docs
 ```
 
 ---
 
-## 🛠️ Tech Stack
+# Running Locally
 
-### Frontend
-
-* Next.js 15
-* TypeScript
-* Tailwind CSS
-* ShadCN UI
-* React Query
-* Zustand
-* Framer Motion
-* React Flow
-* Mermaid.js
-
-### Backend
-
-* Spring Boot 3.5
-* Java 21
-* Spring Security
-* JWT Authentication
-* Maven
-
-### Database
-
-* PostgreSQL
-* Flyway
-* Redis
-
-### AI Layer
-
-* Claude API
-* Gemini API
-* OpenAI API
-
-### DevOps
-
-* Docker
-* Docker Compose
-* GitHub Actions
-* Vercel
-* Render
-* Neon PostgreSQL
-
----
-
-## 📂 Project Structure
+Clone
 
 ```bash
-modelmind-ai/
-│
-├── frontend/
-│   ├── src/
-│   ├── public/
-│   └── package.json
-│
-├── backend/
-│   ├── src/
-│   ├── pom.xml
-│   └── application.yml
-│
-├── docs/
-│   ├── 01-architecture.md
-│   ├── 02-database-design.md
-│   ├── 03-api-documentation.md
-│   └── 04-deployment-guide.md
-│
-├── .github/
-│   └── workflows/
-│
-├── docker-compose.yml
-├── README.md
-└── .gitignore
+git clone https://github.com/Jawahar08/modelmind-ai.git
 ```
 
----
-
-## 📊 Database Modules
-
-Current architecture includes:
-
-* Users
-* Teams
-* Team Members
-* Invitations
-* Projects
-* Schemas
-* Schema Versions
-* AI Requests
-* Comments
-* Exports
-* Notifications
-* Audit Logs
-
----
-
-## 🎯 Development Roadmap
-
-### ✅ Phase 1 Completed
-
-* System Architecture Design
-* Database Design
-* Flyway Migrations
-* Documentation
-
-### 🚧 Phase 2 In Progress
-
-* Authentication Module
-* JWT Security
-* User Management
-
-### 📌 Phase 3
-
-* Project Management APIs
-* Schema Management APIs
-
-### 📌 Phase 4
-
-* AI Integration Layer
-* Schema Generation Engine
-
-### 📌 Phase 5
-
-* Dashboard UI
-* Interactive ER Diagram Editor
-
-### 📌 Phase 6
-
-* SQL Export
-* Documentation Export
-
-### 📌 Phase 7
-
-* Deployment
-* Monitoring
-* CI/CD Pipeline
-
----
-
-## ⚡ Getting Started
-
-### Clone Repository
-
-```bash
-git clone https://github.com/YOUR_USERNAME/modelmind-ai.git
-
-cd modelmind-ai
-```
-
-### Frontend
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-### Backend
+Backend
 
 ```bash
 cd backend
-mvn clean install
+```
+
+Configure
+
+```
+application.yml
+```
+
+Run
+
+```bash
 mvn spring-boot:run
 ```
 
-### Database
+Compile
 
 ```bash
-docker-compose up -d
+mvn clean compile
 ```
 
 ---
 
-## 📸 Screenshots
+# Database Migration
 
-Coming Soon
+Uses Flyway.
 
----
+Migration scripts are located in
 
-## 🎯 Use Cases
-
-* Full Stack Developers
-* Software Engineers
-* Database Architects
-* Startup Founders
-* System Designers
-* Students Learning DBMS
+```
+src/main/resources/db/migration
+```
 
 ---
 
-## 🤝 Contributing
+# Security Features
 
-Contributions, suggestions, and pull requests are welcome.
-
-1. Fork the repository
-2. Create a feature branch
-3. Commit your changes
-4. Push your branch
-5. Open a Pull Request
-
----
-
-## 📜 License
-
-MIT License
+- BCrypt Password Hashing
+- JWT Authentication
+- Authorization Filters
+- Owner Validation
+- Team Access Validation
+- Global Exception Handling
 
 ---
 
-## 👨‍💻 Author
+# Current Progress
+
+Completed
+
+- Authentication
+- Projects
+- Schema Management
+- AI Generation
+- SQL Export
+- Comments
+- Teams
+- Notifications
+
+In Progress
+
+- Activity Feed
+- Audit Logs
+- Real-time Collaboration
+- WebSocket Notifications
+
+Planned
+
+- Frontend Dashboard
+- Live Collaboration
+- Schema Diff Viewer
+- Database Reverse Engineering
+- Git Integration
+- API Keys
+- Billing
+- Analytics
+
+---
+
+# Future Vision
+
+SchemaForge AI aims to become an end-to-end collaborative database engineering platform where developers can:
+
+- Design databases using AI
+- Collaborate with teams
+- Track schema history
+- Export production SQL
+- Manage versions
+- Receive real-time notifications
+- Deploy database changes
+
+---
+
+# Author
 
 **Jawahar Bharathi**
 
-Full Stack Developer | Spring Boot Developer | AI Application Builder
+Full Stack Developer
+
+GitHub
+
+https://github.com/Jawahar08
+
+LinkedIn
+
+(Add your LinkedIn URL)
 
 ---
 
-<div align="center">
+# License
 
-⭐ Star this repository if you find it useful.
-
-"Accelerate hire. Unlock human potential. Build the future of teams."
-Made with ❤️ by Jawahar Bharathi
-
-</div>
+MIT License
