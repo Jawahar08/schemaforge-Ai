@@ -1,8 +1,27 @@
-// Root page — serves the full SchemaForge AI single-page application
-// In a production Next.js build this would be split into proper route segments.
-// For now it renders the landing page with navigation to the app shell.
-import SchemaForgeApp from "@/components/SchemaForgeApp";
+import Link from 'next/link';
+import type { Metadata } from 'next';
+import { LandingNav } from '@/components/landing/LandingNav';
+import { LandingHero } from '@/components/landing/LandingHero';
+import { LandingFeatures } from '@/components/landing/LandingFeatures';
+import { LandingDemo } from '@/components/landing/LandingDemo';
+import { LandingExport } from '@/components/landing/LandingExport';
+import { LandingCTA } from '@/components/landing/LandingCTA';
+import { LandingFooter } from '@/components/landing/LandingFooter';
 
-export default function Home() {
-  return <SchemaForgeApp />;
+export const metadata: Metadata = {
+  title: 'SchemaForge AI — Transform Plain English Into Production-Ready Database Schemas',
+};
+
+export default function HomePage() {
+  return (
+    <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
+      <LandingNav />
+      <LandingHero />
+      <LandingDemo />
+      <LandingFeatures />
+      <LandingExport />
+      <LandingCTA />
+      <LandingFooter />
+    </div>
+  );
 }
