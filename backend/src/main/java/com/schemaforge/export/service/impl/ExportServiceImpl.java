@@ -1,5 +1,8 @@
 package com.schemaforge.export.service.impl;
 
+import com.schemaforge.activity.dto.RecordActivityRequest;
+import com.schemaforge.activity.entity.ActivityType;
+import com.schemaforge.activity.service.ActivityService;
 import com.schemaforge.export.dto.CreateExportRequest;
 import com.schemaforge.export.dto.ExportResponse;
 import com.schemaforge.export.entity.Export;
@@ -38,24 +41,42 @@ public class ExportServiceImpl implements ExportService {
     private final ExportStrategyFactory strategyFactory;
     private final ExportMapper exportMapper;
     private final NotificationService notificationService;
+    private final ActivityService activityService;
 
     @Override
     @Transactional
-    public ExportResponse createExport(User requestedBy, UUID schemaId, CreateExportRequest request) {
-        // 1. Resolve schema — validates existence and ownership in one query
-        Schema schema = schemaRepository.findActiveByIdAndOwnerId(schemaId, requestedBy.getId())
-                .orElseThrow(() -> new SchemaNotFoundException(schemaId));
+    public ExportResponse createExport(
+            User requestedBy,
+            UUID schemaId,
+            CreateExportRequest request
+    ) {
+        // 1. Resolve schema and validate ownership.
+        Schema schema = schemaRepository
+                .findActiveByIdAndOwnerId(
+                        schemaId,
+                        requestedBy.getId()
+                )
+                .orElseThrow(
+                        () -> new SchemaNotFoundException(schemaId)
+                );
 
-        // 2. Select strategy for the requested dialect
-        ExportDialectStrategy strategy = strategyFactory.getStrategy(request.dialect());
+        // 2. Resolve SQL generation strategy.
+        ExportDialectStrategy strategy =
+                strategyFactory.getStrategy(request.dialect());
 
-        // 3. Generate SQL — runs outside any blocking IO; pure in-memory computation
+        // 3. Generate SQL.
         String sql;
+
         try {
             sql = strategy.generateSql(schema);
         } catch (Exception ex) {
-            log.error("SQL generation failed for schema {} dialect {}: {}",
-                    schemaId, request.dialect(), ex.getMessage(), ex);
+            log.error(
+                    "SQL generation failed for schema {} dialect {}: {}",
+                    schemaId,
+                    request.dialect(),
+                    ex.getMessage(),
+                    ex
+            );
 
             Export failedExport = Export.builder()
                     .projectId(schema.getProject().getId())
@@ -65,20 +86,22 @@ public class ExportServiceImpl implements ExportService {
                     .dialect(request.dialect())
                     .status(ExportStatus.FAILED)
                     .build();
+
             exportRepository.save(failedExport);
 
             throw new ExportGenerationException(
-                    "Failed to generate SQL for dialect " + request.dialect() + ": " + ex.getMessage(), ex);
+                    "Failed to generate SQL for dialect "
+                            + request.dialect()
+                            + ": "
+                            + ex.getMessage(),
+                    ex
+            );
         }
 
-        long sizeBytes = sql.getBytes(StandardCharsets.UTF_8).length;
+        long sizeBytes =
+                sql.getBytes(StandardCharsets.UTF_8).length;
 
-        // 4. Persist the completed export record.
-        // NOTE: exports.file_url is VARCHAR(1024) in the V8 migration.
-        // For scripts > 1024 bytes (which is almost always the case), this column
-        // needs to be migrated to TEXT in a V13 migration before going to production.
-        // The entity maps this as String; PostgreSQL will raise a DataException if
-        // the content exceeds 1024 chars. Add V13 migration to resolve this.
+        // 4. Persist completed export.
         Export export = Export.builder()
                 .projectId(schema.getProject().getId())
                 .schema(schema)
@@ -93,50 +116,127 @@ public class ExportServiceImpl implements ExportService {
 
         Export saved = exportRepository.save(export);
 
-        log.info("Export created: id={} schema={} dialect={} size={}B",
-                saved.getId(), schemaId, request.dialect(), sizeBytes);
+        // 5. Record export activity.
+        try {
+            activityService.recordActivity(
+                    RecordActivityRequest.forExport(
+                            requestedBy,
+                            schema.getProject().getId(),
+                            ActivityType.EXPORT_CREATED,
+                            saved.getId(),
+                            "SQL export created for \""
+                                    + schema.getSystemName()
+                                    + "\" ("
+                                    + request.dialect()
+                                    + ")",
+                            Map.of(
+                                    "dialect",
+                                    request.dialect().name(),
+                                    "schemaName",
+                                    schema.getSystemName(),
+                                    "exportId",
+                                    saved.getId().toString()
+                            )
+                    )
+            );
+        } catch (Exception ex) {
+            log.warn(
+                    "Failed to record EXPORT_CREATED activity for export {}: {}",
+                    saved.getId(),
+                    ex.getMessage()
+            );
+        }
 
-        // Notify the user that their export is ready.
+        log.info(
+                "Export created: id={} schema={} dialect={} size={}B",
+                saved.getId(),
+                schemaId,
+                request.dialect(),
+                sizeBytes
+        );
+
+        // 6. Notify user that export is ready.
         try {
             notificationService.createNotification(
                     requestedBy.getId(),
                     NotificationType.EXPORT_READY,
                     "Export ready",
-                    "Your " + request.dialect() + " export for schema \"" + schema.getSystemName() + "\" is ready.",
+                    "Your "
+                            + request.dialect()
+                            + " export for schema \""
+                            + schema.getSystemName()
+                            + "\" is ready.",
                     Map.of(
-                            "exportId", saved.getId().toString(),
-                            "schemaId", schemaId.toString(),
-                            "dialect", request.dialect().name()
+                            "exportId",
+                            saved.getId().toString(),
+                            "schemaId",
+                            schemaId.toString(),
+                            "dialect",
+                            request.dialect().name()
                     )
             );
         } catch (Exception ex) {
-            log.warn("Failed to create EXPORT_READY notification for user {}: {}", requestedBy.getId(), ex.getMessage());
+            log.warn(
+                    "Failed to create EXPORT_READY notification for user {}: {}",
+                    requestedBy.getId(),
+                    ex.getMessage()
+            );
         }
 
         return exportMapper.toResponse(saved);
     }
 
     @Override
-    public ExportResponse getExport(User requestedBy, UUID exportId) {
-        Export export = exportRepository.findByIdAndOwnerId(exportId, requestedBy.getId())
-                .orElseThrow(() -> new ExportNotFoundException(exportId));
+    @Transactional(readOnly = true)
+    public ExportResponse getExport(
+            User requestedBy,
+            UUID exportId
+    ) {
+        Export export = exportRepository
+                .findByIdAndOwnerId(
+                        exportId,
+                        requestedBy.getId()
+                )
+                .orElseThrow(
+                        () -> new ExportNotFoundException(exportId)
+                );
 
         return exportMapper.toResponse(export);
     }
 
     @Override
-    public String downloadExport(User requestedBy, UUID exportId) {
-        Export export = exportRepository.findByIdAndOwnerId(exportId, requestedBy.getId())
-                .orElseThrow(() -> new ExportNotFoundException(exportId));
+    @Transactional(readOnly = true)
+    public String downloadExport(
+            User requestedBy,
+            UUID exportId
+    ) {
+        Export export = exportRepository
+                .findByIdAndOwnerId(
+                        exportId,
+                        requestedBy.getId()
+                )
+                .orElseThrow(
+                        () -> new ExportNotFoundException(exportId)
+                );
 
         if (export.getStatus() != ExportStatus.COMPLETED) {
             throw new ExportGenerationException(
-                    "Export " + exportId + " is not in COMPLETED status (current: " + export.getStatus() + ")");
+                    "Export "
+                            + exportId
+                            + " is not in COMPLETED status (current: "
+                            + export.getStatus()
+                            + ")"
+            );
         }
 
         String content = export.getContent();
+
         if (content == null || content.isBlank()) {
-            throw new ExportGenerationException("Export " + exportId + " has no content available");
+            throw new ExportGenerationException(
+                    "Export "
+                            + exportId
+                            + " has no content available"
+            );
         }
 
         return content;

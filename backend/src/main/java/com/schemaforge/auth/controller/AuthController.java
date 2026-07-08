@@ -27,17 +27,32 @@ public class AuthController {
     private final AuthService authService;
 
     @PostMapping("/register")
-    @Operation(summary = "Register a new user", description = "Creates a new user account and returns a JWT access token")
-    public ResponseEntity<ApiResponse<AuthResponse>> register(@Valid @RequestBody RegisterRequest request) {
+    @Operation(summary = "Register a new user")
+    public ResponseEntity<ApiResponse<AuthResponse>> register(
+            @Valid @RequestBody RegisterRequest request
+    ) {
         AuthResponse response = authService.register(request);
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success("User registered successfully", response));
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(ApiResponse.success(
+                        "User registered successfully",
+                        response
+                ));
     }
 
     @PostMapping("/login")
-    @Operation(summary = "Authenticate a user", description = "Validates credentials and returns a JWT access token")
-    public ResponseEntity<ApiResponse<AuthResponse>> login(@Valid @RequestBody LoginRequest request) {
+    @Operation(summary = "Login user")
+    public ResponseEntity<ApiResponse<AuthResponse>> login(
+            @Valid @RequestBody LoginRequest request
+    ) {
         AuthResponse response = authService.login(request);
-        return ResponseEntity.ok(ApiResponse.success("Login successful", response));
+
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        "Login successful",
+                        response
+                )
+        );
     }
 }

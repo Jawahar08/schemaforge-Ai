@@ -3,6 +3,8 @@ package com.schemaforge.ai.controller;
 import com.schemaforge.ai.dto.GenerateSchemaRequest;
 import com.schemaforge.ai.service.SchemaGenerationService;
 import com.schemaforge.common.dto.ApiResponse;
+import com.schemaforge.config.RateLimitProperties;
+import com.schemaforge.config.RateLimitService;
 import com.schemaforge.schema.dto.SchemaResponse;
 import com.schemaforge.user.entity.User;
 import io.swagger.v3.oas.annotations.Operation;
@@ -20,23 +22,42 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/schemas")
 @RequiredArgsConstructor
-@Tag(name = "AI Schema Generation", description = "Endpoints for generating database schemas from natural language using AI")
+@Tag(
+        name = "AI Schema Generation",
+        description = "Endpoints for generating database schemas from natural language using AI"
+)
 public class SchemaGenerationController {
 
     private final SchemaGenerationService schemaGenerationService;
+    private final RateLimitService rateLimitService;
+    private final RateLimitProperties rateLimitProperties;
 
     @PostMapping("/generate")
     @Operation(
             summary = "Generate a schema from a natural language description",
-            description = "Sends the description to an AI provider, generates tables, relationships, normalization notes, "
-                    + "and analysis items, saves the schema as version 1, and records an AI request audit entry"
+            description = "Sends the description to an AI provider, generates tables, "
+                    + "relationships, normalization notes, and analysis items, "
+                    + "saves the schema as version 1, and records an AI request audit entry"
     )
     public ResponseEntity<ApiResponse<SchemaResponse>> generateSchema(
             @AuthenticationPrincipal User currentUser,
             @Valid @RequestBody GenerateSchemaRequest request
     ) {
-        SchemaResponse response = schemaGenerationService.generateSchema(currentUser, request);
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success("Schema generated successfully", response));
+        rateLimitService.checkAndIncrement(
+                "ai-gen:" + currentUser.getId(),
+                rateLimitProperties.getAiGenerationMaxRequests(),
+                rateLimitProperties.getAiGenerationWindowSeconds(),
+                "AI schema generation"
+        );
+
+        SchemaResponse response =
+                schemaGenerationService.generateSchema(currentUser, request);
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(ApiResponse.success(
+                        "Schema generated successfully",
+                        response
+                ));
     }
 }

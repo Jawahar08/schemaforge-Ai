@@ -1,6 +1,8 @@
 package com.schemaforge.project.repository;
 
 import com.schemaforge.project.entity.Project;
+import com.schemaforge.project.entity.ProjectStatus;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -21,4 +23,14 @@ public interface ProjectRepository extends JpaRepository<Project, UUID> {
     Optional<Project> findActiveByIdAndOwnerId(@Param("id") UUID id, @Param("ownerId") UUID ownerId);
 
     boolean existsByIdAndOwnerIdAndDeletedAtIsNull(UUID id, UUID ownerId);
+
+    // Add these methods to your existing ProjectRepository interface
+
+long countByOwnerIdAndDeletedAtIsNull(UUID ownerId);
+
+long countByOwnerIdAndStatusAndDeletedAtIsNull(UUID ownerId, ProjectStatus status);
+
+
+
+// findActiveById already exists from earlier work — verify it uses deletedAt IS NULL
 }

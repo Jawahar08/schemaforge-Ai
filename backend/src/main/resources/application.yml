@@ -4,8 +4,8 @@ spring:
 
   datasource:
     url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/schemaforge}
-    username: postgres
-    password: Pandian@008
+    username: ${DATABASE_USERNAME:postgres}
+    password: ${DATABASE_PASSWORD:}
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 10
@@ -56,21 +56,37 @@ application:
   security:
     jwt:
       secret-key: ${JWT_SECRET:7d9f4a6b2c1e8f5a9d3c7b1e6f2a8d4c9b5e1f7a3d6c8b2e9f4a1c7d5e8f3b6}
-      expiration: ${JWT_EXPIRATION:900000} # 15 minutes in ms
+      expiration: ${JWT_EXPIRATION:900000}
+
+app:
+  rate-limit:
+    login-max-requests: 10
+    login-window-seconds: 60
+
+    registration-max-requests: 5
+    registration-window-seconds: 300
+
+    ai-generation-max-requests: 20
+    ai-generation-window-seconds: 3600
+
+    export-max-requests: 30
+    export-window-seconds: 3600
 
 ai:
   claude:
     base-url: ${CLAUDE_BASE_URL:https://api.anthropic.com}
     api-key: ${CLAUDE_API_KEY:invalid-key}
     model: ${CLAUDE_MODEL:claude-sonnet-4-20250514}
+
   openai:
     base-url: ${OPENAI_BASE_URL:https://api.openai.com}
     api-key: ${OPENAI_API_KEY:}
     model: ${OPENAI_MODEL:gpt-4o-mini}
+
   gemini:
     base-url: ${GEMINI_BASE_URL:https://generativelanguage.googleapis.com}
     api-key: ${GEMINI_API_KEY:}
-    model: gemini-2.0-flash
+    model: ${GEMINI_MODEL:gemini-2.0-flash}
 
 springdoc:
   api-docs:

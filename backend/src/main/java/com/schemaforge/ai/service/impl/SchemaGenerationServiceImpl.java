@@ -1,5 +1,8 @@
 package com.schemaforge.ai.service.impl;
 
+import com.schemaforge.activity.dto.RecordActivityRequest;
+import com.schemaforge.activity.entity.ActivityType;
+import com.schemaforge.activity.service.ActivityService;
 import com.schemaforge.ai.client.AiProviderClient;
 import com.schemaforge.ai.client.AiProviderClientFactory;
 import com.schemaforge.ai.client.AiSchemaGenerationResult;
@@ -37,50 +40,79 @@ import java.util.Map;
 public class SchemaGenerationServiceImpl implements SchemaGenerationService {
 
     private static final AiProvider DEFAULT_PROVIDER = AiProvider.CLAUDE;
-    private static final NormalizationTarget DEFAULT_NORMALIZATION_TARGET = NormalizationTarget.THREE_NF;
+
+    private static final NormalizationTarget DEFAULT_NORMALIZATION_TARGET =
+            NormalizationTarget.THREE_NF;
 
     private final AiProviderClientFactory providerClientFactory;
     private final SchemaService schemaService;
     private final SchemaRepository schemaRepository;
     private final AiRequestRepository aiRequestRepository;
     private final NotificationService notificationService;
+    private final ActivityService activityService;
 
-    // Self-injection via @Lazy breaks the circular dependency and ensures calls to
-    // persistGenerationResult() and recordFailedRequestInNewTransaction() go through
-    // the Spring proxy, making @Transactional effective. Without this, direct this.method()
-    // calls bypass the proxy and the annotations have no effect.
+    /*
+     * Self-injection via @Lazy ensures calls to transactional internal methods
+     * pass through the Spring proxy.
+     */
     @Autowired
     @Lazy
     private SchemaGenerationServiceImpl self;
 
     @Override
-    // NOTE: intentionally NOT @Transactional at this level.
-    // The outer method calls Claude (an external HTTP call that can take 5-30 seconds).
-    // Holding a DB transaction open across that network call would exhaust the connection
-    // pool under load. Instead, each DB operation delegates to its own @Transactional method.
-    public SchemaResponse generateSchema(User user, GenerateSchemaRequest request) {
-        AiProvider provider = request.provider() != null ? request.provider() : DEFAULT_PROVIDER;
-        NormalizationTarget normalizationTarget = request.normalizationTarget() != null
-                ? request.normalizationTarget()
-                : DEFAULT_NORMALIZATION_TARGET;
+    public SchemaResponse generateSchema(
+            User user,
+            GenerateSchemaRequest request
+    ) {
+        AiProvider provider =
+                request.provider() != null
+                        ? request.provider()
+                        : DEFAULT_PROVIDER;
 
-        AiProviderClient client = providerClientFactory.getClient(provider);
+        NormalizationTarget normalizationTarget =
+                request.normalizationTarget() != null
+                        ? request.normalizationTarget()
+                        : DEFAULT_NORMALIZATION_TARGET;
+
+        AiProviderClient client =
+                providerClientFactory.getClient(provider);
 
         AiSchemaGenerationResult result;
+
         try {
-            // This external call runs OUTSIDE any transaction.
-            result = client.generateSchema(request.description(), normalizationTarget.getValue());
+            /*
+             * External AI call intentionally runs outside a database
+             * transaction.
+             */
+            result = client.generateSchema(
+                    request.description(),
+                    normalizationTarget.getValue()
+            );
         } catch (Exception ex) {
-            log.error("Schema generation failed for provider {}: {}", provider, ex.getMessage(), ex);
-            // Save failure audit in its own NEW transaction so it always commits
-            // even though no schema was created. This cannot be part of the outer
-            // flow since there is no outer transaction to roll back.
-            self.recordFailedRequestInNewTransaction(user, provider, request, ex.getMessage());
+            log.error(
+                    "Schema generation failed for provider {}: {}",
+                    provider,
+                    ex.getMessage(),
+                    ex
+            );
+
+            self.recordFailedRequestInNewTransaction(
+                    user,
+                    provider,
+                    request,
+                    ex.getMessage()
+            );
+
             throw ex;
         }
 
-        // All DB writes happen inside a single transaction here.
-        return self.persistGenerationResult(user, request, provider, normalizationTarget, result);
+        return self.persistGenerationResult(
+                user,
+                request,
+                provider,
+                normalizationTarget,
+                result
+        );
     }
 
     @Transactional
@@ -91,105 +123,213 @@ public class SchemaGenerationServiceImpl implements SchemaGenerationService {
             NormalizationTarget normalizationTarget,
             AiSchemaGenerationResult result
     ) {
-        CreateSchemaRequest createSchemaRequest = new CreateSchemaRequest(
-                result.systemName() != null ? result.systemName() : "Generated Schema",
-                result.description(),
-                normalizationTarget,
-                result.tables() != null ? result.tables() : Collections.emptyList(),
-                result.relationships() != null ? result.relationships() : Collections.emptyList(),
-                result.normalizationNotes() != null ? result.normalizationNotes() : Collections.emptyList(),
-                result.analysisItems() != null ? result.analysisItems() : Collections.emptyList()
-        );
+        CreateSchemaRequest createSchemaRequest =
+                new CreateSchemaRequest(
+                        result.systemName() != null
+                                ? result.systemName()
+                                : "Generated Schema",
+                        result.description(),
+                        normalizationTarget,
+                        result.tables() != null
+                                ? result.tables()
+                                : Collections.emptyList(),
+                        result.relationships() != null
+                                ? result.relationships()
+                                : Collections.emptyList(),
+                        result.normalizationNotes() != null
+                                ? result.normalizationNotes()
+                                : Collections.emptyList(),
+                        result.analysisItems() != null
+                                ? result.analysisItems()
+                                : Collections.emptyList()
+                );
 
-        SchemaResponse schemaResponse = schemaService.createSchema(user, request.projectId(), createSchemaRequest);
+        SchemaResponse schemaResponse =
+                schemaService.createSchema(
+                        user,
+                        request.projectId(),
+                        createSchemaRequest
+                );
 
-        Schema savedSchema = schemaRepository.findActiveById(schemaResponse.id())
-                .orElseThrow(() -> new SchemaNotFoundException(schemaResponse.id()));
+        Schema savedSchema =
+                schemaRepository
+                        .findActiveById(schemaResponse.id())
+                        .orElseThrow(
+                                () -> new SchemaNotFoundException(
+                                        schemaResponse.id()
+                                )
+                        );
 
-        AiRequest aiRequest = AiRequest.builder()
-                .user(user)
-                .schema(savedSchema)
-                .requestType(AiRequestType.SCHEMA_GENERATION)
-                .provider(provider)
-                .model(result.modelUsed())
-                .prompt(buildPromptSummary(request))
-                .response(result.rawResponse())
-                .promptTokens(result.promptTokens())
-                .completionTokens(result.completionTokens())
-                .latencyMs((int) result.latencyMs())
-                .status(AiRequestStatus.SUCCESS)
-                .build();
+        AiRequest aiRequest =
+                AiRequest.builder()
+                        .user(user)
+                        .schema(savedSchema)
+                        .requestType(
+                                AiRequestType.SCHEMA_GENERATION
+                        )
+                        .provider(provider)
+                        .model(result.modelUsed())
+                        .prompt(buildPromptSummary(request))
+                        .response(result.rawResponse())
+                        .promptTokens(result.promptTokens())
+                        .completionTokens(result.completionTokens())
+                        .latencyMs((int) result.latencyMs())
+                        .status(AiRequestStatus.SUCCESS)
+                        .build();
 
         aiRequestRepository.save(aiRequest);
 
-        log.info("Schema generated via {} for project {}: schema id={}",
-                provider, request.projectId(), savedSchema.getId());
+        /*
+         * Record AI generation activity after the successful AI request
+         * audit row has been persisted.
+         */
+        try {
+            activityService.recordActivity(
+                    RecordActivityRequest.forSchema(
+                            user,
+                            request.projectId(),
+                            schemaResponse.id(),
+                            ActivityType.SCHEMA_GENERATED,
+                            schemaResponse.id(),
+                            "Schema \""
+                                    + (
+                                            result.systemName() != null
+                                                    ? result.systemName()
+                                                    : savedSchema.getSystemName()
+                                    )
+                                    + "\" generated via AI",
+                            Map.of(
+                                    "schemaName",
+                                    result.systemName() != null
+                                            ? result.systemName()
+                                            : savedSchema.getSystemName(),
+                                    "provider",
+                                    provider.name(),
+                                    "tableCount",
+                                    result.tables() != null
+                                            ? result.tables().size()
+                                            : 0
+                            )
+                    )
+            );
+        } catch (Exception ex) {
+            log.warn(
+                    "Failed to record SCHEMA_GENERATED activity for schema {}: {}",
+                    schemaResponse.id(),
+                    ex.getMessage()
+            );
+        }
 
-        // Notify user of successful schema generation.
+        log.info(
+                "Schema generated via {} for project {}: schema id={}",
+                provider,
+                request.projectId(),
+                savedSchema.getId()
+        );
+
+        /*
+         * Notify user of successful schema generation.
+         */
         try {
             notificationService.createNotification(
                     user.getId(),
                     NotificationType.SCHEMA_GENERATED,
                     "Schema generated successfully",
-                    "Your AI schema \"" + savedSchema.getSystemName() + "\" was generated successfully via " + provider,
+                    "Your AI schema \""
+                            + savedSchema.getSystemName()
+                            + "\" was generated successfully via "
+                            + provider,
                     Map.of(
-                            "schemaId", savedSchema.getId().toString(),
-                            "projectId", request.projectId().toString(),
-                            "provider", provider.name()
+                            "schemaId",
+                            savedSchema.getId().toString(),
+                            "projectId",
+                            request.projectId().toString(),
+                            "provider",
+                            provider.name()
                     )
             );
         } catch (Exception ex) {
-            log.warn("Failed to create SCHEMA_GENERATED notification for user {}: {}", user.getId(), ex.getMessage());
+            log.warn(
+                    "Failed to create SCHEMA_GENERATED notification for user {}: {}",
+                    user.getId(),
+                    ex.getMessage()
+            );
         }
 
         return schemaResponse;
     }
 
-    // REQUIRES_NEW: runs in a completely independent transaction that commits
-    // immediately, regardless of what happens in the calling method.
-    // This guarantees the FAILED audit row is persisted even when the caller
-    // re-throws and no outer transaction exists to roll back.
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     protected void recordFailedRequestInNewTransaction(
-            User user, AiProvider provider, GenerateSchemaRequest request, String errorMessage
+            User user,
+            AiProvider provider,
+            GenerateSchemaRequest request,
+            String errorMessage
     ) {
-        AiRequest aiRequest = AiRequest.builder()
-                .user(user)
-                .schema(null)
-                .requestType(AiRequestType.SCHEMA_GENERATION)
-                .provider(provider)
-                .model("unknown")
-                .prompt(buildPromptSummary(request))
-                .response(null)
-                .promptTokens(0)
-                .completionTokens(0)
-                .latencyMs(0)
-                .status(AiRequestStatus.FAILED)
-                .errorMessage(errorMessage)
-                .build();
+        AiRequest aiRequest =
+                AiRequest.builder()
+                        .user(user)
+                        .schema(null)
+                        .requestType(
+                                AiRequestType.SCHEMA_GENERATION
+                        )
+                        .provider(provider)
+                        .model("unknown")
+                        .prompt(buildPromptSummary(request))
+                        .response(null)
+                        .promptTokens(0)
+                        .completionTokens(0)
+                        .latencyMs(0)
+                        .status(AiRequestStatus.FAILED)
+                        .errorMessage(errorMessage)
+                        .build();
 
         aiRequestRepository.save(aiRequest);
-        log.warn("Recorded failed AI request audit for user={} provider={}", user.getId(), provider);
 
-        // Notify user that schema generation failed.
+        log.warn(
+                "Recorded failed AI request audit for user={} provider={}",
+                user.getId(),
+                provider
+        );
+
+        /*
+         * Notify user that schema generation failed.
+         */
         try {
             notificationService.createNotification(
                     user.getId(),
                     NotificationType.SCHEMA_GENERATED,
                     "Schema generation failed",
-                    "Schema generation via " + provider + " failed: " + errorMessage,
+                    "Schema generation via "
+                            + provider
+                            + " failed: "
+                            + errorMessage,
                     Map.of(
-                            "projectId", request.projectId().toString(),
-                            "provider", provider.name(),
-                            "error", errorMessage != null ? errorMessage : "unknown"
+                            "projectId",
+                            request.projectId().toString(),
+                            "provider",
+                            provider.name(),
+                            "error",
+                            errorMessage != null
+                                    ? errorMessage
+                                    : "unknown"
                     )
             );
         } catch (Exception ex) {
-            log.warn("Failed to create SCHEMA_GENERATED failure notification for user {}: {}", user.getId(), ex.getMessage());
+            log.warn(
+                    "Failed to create SCHEMA_GENERATED failure notification for user {}: {}",
+                    user.getId(),
+                    ex.getMessage()
+            );
         }
     }
 
-    private String buildPromptSummary(GenerateSchemaRequest request) {
-        return "Schema generation for project=" + request.projectId() + ": " + request.description();
+    private String buildPromptSummary(
+            GenerateSchemaRequest request
+    ) {
+        return "Schema generation for project="
+                + request.projectId()
+                + ": "
+                + request.description();
     }
 }
