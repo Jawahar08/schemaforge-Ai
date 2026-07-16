@@ -24,8 +24,25 @@ import type {
   CreateInvitationRequest,
   AiRequestSummaryResponse,
   UserResponse,
+  ActivitySummaryResponse,
+  ActivityResponse,
+  ActivityFilterRequest,
+  Page,
 } from '@/types';
 import { api } from '@/lib/api';
+
+// ─── Query builder helper ──────────────────────────────────────────────────────
+function withQuery(path: string, params?: Record<string, any>) {
+  if (!params) return path;
+  const searchParams = new URLSearchParams();
+  Object.entries(params).forEach(([key, val]) => {
+    if (val !== undefined && val !== null) {
+      searchParams.append(key, String(val));
+    }
+  });
+  const queryString = searchParams.toString();
+  return queryString ? `${path}?${queryString}` : path;
+}
 
 // ─── Auth ─────────────────────────────────────────────────────────────────────
 export const authApi = {
@@ -110,4 +127,18 @@ export const teamsApi = {
     api.post<InvitationResponse>(`/api/teams/${teamId}/invitations`, req),
   listInvitations: (teamId: string) =>
     api.get<InvitationResponse[]>(`/api/teams/${teamId}/invitations`),
+};
+
+// ─── Activities ───────────────────────────────────────────────────────────────
+export const activitiesApi = {
+  getMyActivities: (req?: ActivityFilterRequest) =>
+    api.get<Page<ActivitySummaryResponse>>(withQuery('/api/activities', req)),
+  getProjectActivities: (projectId: string, req?: ActivityFilterRequest) =>
+    api.get<Page<ActivitySummaryResponse>>(withQuery(`/api/projects/${projectId}/activities`, req)),
+  getTeamActivities: (teamId: string, req?: ActivityFilterRequest) =>
+    api.get<Page<ActivitySummaryResponse>>(withQuery(`/api/teams/${teamId}/activities`, req)),
+  getSchemaActivities: (schemaId: string) =>
+    api.get<Page<ActivitySummaryResponse>>(`/api/schemas/${schemaId}/activities`),
+  getActivityById: (activityId: string) =>
+    api.get<ActivityResponse>(`/api/activities/${activityId}`),
 };

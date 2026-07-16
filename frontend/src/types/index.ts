@@ -281,3 +281,80 @@ export interface Page<T> {
   size: number;
   number: number;
 }
+
+// ─── Activities ───────────────────────────────────────────────────────────────
+export type ActivityType =
+  | 'PROJECT_CREATED'
+  | 'PROJECT_UPDATED'
+  | 'PROJECT_ARCHIVED'
+  | 'PROJECT_DELETED'
+  | 'SCHEMA_CREATED'
+  | 'SCHEMA_UPDATED'
+  | 'SCHEMA_GENERATED'
+  | 'SCHEMA_GENERATION_FAILED'
+  | 'SCHEMA_DELETED'
+  | 'SCHEMA_RESTORED'
+  | 'EXPORT_CREATED'
+  | 'EXPORT_FAILED'
+  | 'COMMENT_CREATED'
+  | 'COMMENT_UPDATED'
+  | 'COMMENT_DELETED'
+  | 'TEAM_CREATED'
+  | 'TEAM_UPDATED'
+  | 'TEAM_DELETED'
+  | 'TEAM_MEMBER_ADDED'
+  | 'TEAM_MEMBER_REMOVED'
+  | 'TEAM_MEMBER_ROLE_CHANGED'
+  | 'INVITATION_SENT'
+  | 'INVITATION_ACCEPTED'
+  | 'INVITATION_REJECTED'
+  | 'INVITATION_REVOKED'
+  | 'USER_LOGIN'
+  | 'SYSTEM_EVENT';
+
+export type ActivityEntityType =
+  | 'PROJECT'
+  | 'SCHEMA'
+  | 'EXPORT'
+  | 'COMMENT'
+  | 'TEAM'
+  | 'TEAM_MEMBER'
+  | 'INVITATION'
+  | 'USER'
+  | 'SYSTEM';
+
+export interface ActivitySummaryResponse {
+  id: string;
+  actorUserId: string;
+  actorName: string;
+  activityType: ActivityType;
+  entityType: ActivityEntityType;
+  entityId: string;
+  title: string;
+  createdAt: string;
+}
+
+export interface ActivityResponse {
+  id: string;
+  actorUserId: string;
+  actorName: string;
+  projectId: string | null;
+  teamId: string | null;
+  schemaId: string | null;
+  activityType: ActivityType;
+  entityType: ActivityEntityType;
+  entityId: string;
+  title: string;
+  description: string | null;
+  metadata: Record<string, unknown>;
+  createdAt: string;
+}
+
+export interface ActivityFilterRequest {
+  activityType?: ActivityType;
+  from?: string;
+  to?: string;
+  page?: number;
+  size?: number;
+  sort?: string;
+}

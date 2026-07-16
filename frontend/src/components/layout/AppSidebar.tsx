@@ -14,6 +14,7 @@ import {
   LogOut,
   ChevronRight,
   Cpu,
+  History,
 } from 'lucide-react';
 import { useAuthStore } from '@/store/auth';
 import { cn } from '@/lib/utils';
@@ -23,6 +24,7 @@ const NAV_ITEMS = [
   { href: '/projects', label: 'Projects', icon: FolderOpen },
   { href: '/teams', label: 'Teams', icon: Users },
   { href: '/notifications', label: 'Notifications', icon: Bell },
+  { href: '/activities', label: 'Activity Log', icon: History },
   { href: '/settings', label: 'Settings', icon: Settings },
 ];
 
