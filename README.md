@@ -1,406 +1,374 @@
-# SchemaForge AI
-
 <div align="center">
 
-### AI-Powered Database Design Platform
+<!-- Animated gradient banner using SVG -->
+<img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=12,14,30&height=200&section=header&text=SchemaForge%20AI&fontSize=52&fontAlignY=35&animation=fadeIn&fontColor=ffffff&desc=Transform%20Plain%20English%20Into%20Production-Ready%20Database%20Schemas&descSize=16&descAlignY=55" width="100%" />
 
-Generate production-ready database schemas from natural language, collaborate with your team, export SQL for multiple databases, and manage projects through a modern AI-powered backend.
+<br/>
 
-![Java](https://img.shields.io/badge/Java-21-orange)
-![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.5-green)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-blue)
-![Redis](https://img.shields.io/badge/Redis-Cache-red)
-![Docker](https://img.shields.io/badge/Docker-Ready-blue)
-![License](https://img.shields.io/badge/License-MIT-green)
+<p>
+  <a href="#-quick-start"><img src="https://img.shields.io/badge/Get_Started-→-7c3aed?style=for-the-badge" alt="Get Started" /></a>
+  <a href="http://localhost:8080/swagger-ui/index.html"><img src="https://img.shields.io/badge/API_Docs-Swagger-85EA2D?style=for-the-badge&logo=swagger&logoColor=black" alt="API Docs" /></a>
+  <a href="#-architecture"><img src="https://img.shields.io/badge/Architecture-View-0ea5e9?style=for-the-badge" alt="Architecture" /></a>
+</p>
+
+<p>
+  <img src="https://img.shields.io/badge/Java-21-ED8B00?style=flat-square&logo=openjdk&logoColor=white" />
+  <img src="https://img.shields.io/badge/Spring_Boot-3.5-6DB33F?style=flat-square&logo=spring-boot&logoColor=white" />
+  <img src="https://img.shields.io/badge/Next.js-15-000000?style=flat-square&logo=next.js&logoColor=white" />
+  <img src="https://img.shields.io/badge/PostgreSQL-17-4169E1?style=flat-square&logo=postgresql&logoColor=white" />
+  <img src="https://img.shields.io/badge/TypeScript-5-3178C6?style=flat-square&logo=typescript&logoColor=white" />
+  <img src="https://img.shields.io/badge/Docker-Ready-2496ED?style=flat-square&logo=docker&logoColor=white" />
+  <img src="https://img.shields.io/badge/License-MIT-22c55e?style=flat-square" />
+</p>
+
+<br/>
+
+> **Describe your database in plain English. Get production-ready SQL in seconds.**
+>
+> SchemaForge AI is a full-stack platform that uses AI to convert natural language requirements into normalized, version-controlled relational database schemas — with team collaboration, multi-dialect SQL export, and an immutable audit trail built in.
+
+<br/>
 
 </div>
 
 ---
 
-# Overview
+## ✨ Why SchemaForge AI?
 
-SchemaForge AI is an enterprise-grade backend platform that converts natural language requirements into normalized relational database schemas using AI.
+<table>
+<tr>
+<td width="50%">
 
-The platform provides complete project management, schema versioning, SQL export, team collaboration, notifications, comments, authentication, and role-based access control.
+### 🧠 AI-Powered Schema Generation
+Describe what your app does in plain English. SchemaForge uses **Google Gemini** and **Claude** to generate fully normalized database schemas with tables, columns, relationships, indexes, and constraints — no manual ERD clicking required.
 
-Designed using a modular Spring Boot architecture with production-ready coding practices.
+</td>
+<td width="50%">
 
----
+### 🔄 Multi-Dialect SQL Export
+Export production-ready DDL for **PostgreSQL**, **MySQL**, **Oracle**, and **SQL Server** with a single click. Every export is tracked, versioned, and downloadable.
 
-# Features
+</td>
+</tr>
+<tr>
+<td width="50%">
 
-## AI Schema Generation
+### 👥 Team Collaboration
+Create workspaces, invite members with role-based access (**Owner → Admin → Member → Viewer**), leave threaded comments on schemas, and get real-time notifications.
 
-- Generate database schemas from natural language
-- AI-powered table and relationship generation
-- Intelligent normalization
-- Project-based schema management
-- Schema version tracking
+</td>
+<td width="50%">
 
----
+### 📜 Activity Feed & Audit Trail
+Every action — schema generation, export, team change, comment — is logged as an immutable activity record. Filter by type, paginate, and inspect full metadata per event.
 
-## Authentication
-
-- JWT Authentication
-- Refresh Token Support
-- BCrypt Password Encryption
-- Secure Spring Security Configuration
-- Role-Based Authorization
-
----
-
-## Project Management
-
-- Create Projects
-- Update Projects
-- Delete Projects
-- Archive Projects
-- Project Ownership
+</td>
+</tr>
+</table>
 
 ---
 
-## Schema Management
+## 🏗 Architecture
 
-- Multiple Schemas per Project
-- Version History
-- Schema Metadata
-- AI Generated Descriptions
-- Ownership Validation
+```mermaid
+graph TB
+    subgraph Client["🖥️ Frontend — Next.js 15"]
+        LP[Landing Page]
+        DASH[Dashboard]
+        PROJ[Projects]
+        SCH[Schema Workspace]
+        TEAM[Teams & Members]
+        ACT[Activity Feed]
+        NOTIF[Notifications]
+    end
 
----
+    subgraph API["⚡ Backend — Spring Boot 3.5"]
+        AUTH[Auth & JWT]
+        PM[Project Management]
+        SG[AI Schema Generator]
+        EXP[SQL Export Engine]
+        CM[Comments Module]
+        TM[Team Management]
+        AF[Activity Logger]
+        NF[Notification Service]
+        SEC[Security Filters]
+    end
 
-## SQL Export Engine
+    subgraph Data["🗄️ Data Layer"]
+        PG[(PostgreSQL 17)]
+        FW[Flyway Migrations]
+    end
 
-Generate production-ready SQL for:
+    subgraph AI["🤖 AI Providers"]
+        GEM[Google Gemini]
+        CLD[Claude API]
+    end
 
-- PostgreSQL
-- MySQL
-- Oracle
-- SQL Server
+    Client -->|REST API| API
+    SG --> AI
+    API --> Data
+    FW --> PG
 
-Export tracking includes:
-
-- Export history
-- Export status
-- Downloadable SQL
-- Metadata storage
-
----
-
-## Comments Module
-
-Collaborative schema discussions
-
-Features
-
-- Create Comments
-- Update Comments
-- Delete Comments
-- Thread Support
-- Entity References
-- Edit Tracking
-- Permission Validation
-
----
-
-## Teams & Collaboration
-
-Workspace management
-
-Features
-
-- Create Teams
-- Team Members
-- Roles
-- Invitations
-- Workspace Ownership
-- Slug Generation
-- Collaboration APIs
-
-Roles
-
-- OWNER
-- ADMIN
-- MEMBER
-- VIEWER
-
----
-
-## Notifications
-
-Real-time notifications
-
-Automatically generated when:
-
-- Schema Generated
-- Export Completed
-- Comment Added
-- Team Invitation Created
-- Invitation Accepted
-
-Endpoints
-
-- Get Notifications
-- Get Unread
-- Mark Read
-- Mark All Read
-- Delete Notification
-
----
-
-## Security
-
-- Spring Security
-- JWT Filters
-- Route Authorization
-- User Ownership Validation
-- Team Permission Validation
-
----
-
-## Database
-
-- PostgreSQL
-- Flyway Migrations
-- UUID Primary Keys
-- JSONB Metadata
-- Optimized Indexes
-- Cascade Relationships
-
----
-
-# Architecture
-
-```
-Client
-   │
-   ▼
-Spring Boot REST API
-   │
-   ├── Authentication
-   ├── Projects
-   ├── Schemas
-   ├── AI Generation
-   ├── SQL Export
-   ├── Teams
-   ├── Comments
-   ├── Notifications
-   └── Security
-        │
-        ▼
- PostgreSQL
+    style Client fill:#1e1b4b,stroke:#7c3aed,color:#e0e7ff
+    style API fill:#0c4a6e,stroke:#0ea5e9,color:#e0f2fe
+    style Data fill:#14532d,stroke:#22c55e,color:#dcfce7
+    style AI fill:#7c2d12,stroke:#f97316,color:#ffedd5
 ```
 
 ---
 
-# Tech Stack
+## 🎯 Feature Matrix
 
-## Backend
-
-- Java 21
-- Spring Boot 3.5
-- Spring Security
-- Spring Data JPA
-- Hibernate
-- MapStruct
-- Lombok
-- Validation API
-
-## Database
-
-- PostgreSQL
-- Flyway
-
-## AI
-
-- Google Gemini API
-- Claude API (Supported)
-
-## Build
-
-- Maven
-
-## Documentation
-
-- Swagger UI
-- OpenAPI 3
+| Module | Description | Backend | Frontend |
+|--------|-------------|:-------:|:--------:|
+| **Authentication** | JWT + refresh tokens, BCrypt, role-based access | ✅ | ✅ |
+| **Projects** | CRUD, archiving, ownership, dialect selection | ✅ | ✅ |
+| **AI Generation** | NL → normalized schema via Gemini / Claude | ✅ | ✅ |
+| **Schema Management** | Multi-version, metadata, restore, soft-delete | ✅ | ✅ |
+| **SQL Export** | PostgreSQL, MySQL, Oracle, SQL Server DDL | ✅ | ✅ |
+| **Comments** | Threaded discussions, entity refs, edit tracking | ✅ | ✅ |
+| **Teams** | Workspaces, invitations, RBAC (4 roles) | ✅ | ✅ |
+| **Notifications** | Auto-generated alerts, mark read, bulk ops | ✅ | ✅ |
+| **Activity Feed** | Immutable audit trail, filters, paginated | ✅ | ✅ |
+| **Dashboard** | Stats overview, recent projects, AI credits | ✅ | ✅ |
 
 ---
 
-# Project Structure
+## 🚀 Quick Start
 
-```
-src/main/java/com/schemaforge
+### Prerequisites
 
-├── ai
-├── auth
-├── comment
-├── common
-├── config
-├── export
-├── notification
-├── project
-├── schema
-├── security
-├── team
-└── user
-```
+- **Java 21+** · **Maven** · **Node.js 18+** · **PostgreSQL 16+**
+- An API key for [Google Gemini](https://ai.google.dev/) or [Anthropic Claude](https://console.anthropic.com/)
 
----
-
-# REST Modules
-
-| Module | Status |
-|---------|--------|
-| Authentication | ✅ |
-| Users | ✅ |
-| Projects | ✅ |
-| Schema Generation | ✅ |
-| AI Integration | ✅ |
-| SQL Export | ✅ |
-| Comments | ✅ |
-| Teams | ✅ |
-| Notifications | ✅ |
-| Security | ✅ |
-
----
-
-# API Documentation
-
-Swagger
-
-```
-http://localhost:8080/swagger-ui/index.html
-```
-
-OpenAPI
-
-```
-http://localhost:8080/v3/api-docs
-```
-
----
-
-# Running Locally
-
-Clone
+### Option 1 — Docker (Recommended)
 
 ```bash
-git clone https://github.com/Jawahar08/modelmind-ai.git
+# Clone the repository
+git clone https://github.com/Jawahar08/schemaforge-Ai.git
+cd schemaforge-Ai
+
+# Set your AI provider key
+export ANTHROPIC_API_KEY=sk-ant-...
+export NEXT_PUBLIC_ANTHROPIC_API_KEY=sk-ant-...
+
+# Launch everything
+docker compose up -d
 ```
 
-Backend
+| Service | URL |
+|---------|-----|
+| 🖥️ Frontend | [http://localhost:3000](http://localhost:3000) |
+| ⚡ Backend API | [http://localhost:8080](http://localhost:8080) |
+| 📖 Swagger UI | [http://localhost:8080/swagger-ui/index.html](http://localhost:8080/swagger-ui/index.html) |
+
+### Option 2 — Manual Setup
+
+<details>
+<summary><b>Backend</b></summary>
 
 ```bash
 cd backend
-```
 
-Configure
+# Configure your database and AI keys in application.yml
+# (or use environment variables)
 
-```
-application.yml
-```
-
-Run
-
-```bash
+# Build & run
+mvn clean compile
 mvn spring-boot:run
 ```
 
-Compile
+The API will be live at `http://localhost:8080`.
+
+</details>
+
+<details>
+<summary><b>Frontend</b></summary>
 
 ```bash
-mvn clean compile
+cd frontend
+
+# Install dependencies
+npm install
+
+# Create .env.local from .env.example
+cp .env.example .env.local
+
+# Start dev server
+npm run dev
+```
+
+The app will be live at `http://localhost:3000`.
+
+</details>
+
+---
+
+## 📁 Project Structure
+
+```
+schemaforge-Ai/
+│
+├── backend/                          # Spring Boot 3.5 API
+│   └── src/main/java/com/schemaforge/
+│       ├── ai/                       # AI client, prompt engineering, generation service
+│       ├── auth/                     # JWT authentication, login, register
+│       ├── project/                  # Project CRUD, archival, ownership
+│       ├── schema/                   # Schema entity, versioning, restore
+│       ├── export/                   # Multi-dialect SQL generation & download
+│       ├── comment/                  # Threaded comments, entity references
+│       ├── team/                     # Workspaces, members, invitations, RBAC
+│       ├── notification/             # Auto-generated alerts, read tracking
+│       ├── activity/                 # Immutable audit log, filters, pagination
+│       ├── dashboard/                # Dashboard aggregation endpoints
+│       ├── security/                 # Spring Security config, JWT filter chain
+│       ├── config/                   # App-wide configuration beans
+│       ├── common/                   # Shared entities, DTOs, exceptions
+│       └── user/                     # User entity, profile endpoints
+│
+├── frontend/                         # Next.js 15 + TypeScript
+│   └── src/
+│       ├── app/                      # File-based routing (App Router)
+│       │   ├── activities/           # Global audit trail feed
+│       │   ├── dashboard/            # Stats, recent projects, AI credits
+│       │   ├── projects/[id]/        # Project detail + tabbed activity log
+│       │   ├── schemas/[id]/         # Schema workspace (tables, ER diagram)
+│       │   ├── teams/[id]/           # Team members, invites, team activity
+│       │   ├── notifications/        # Alert center
+│       │   └── settings/             # User profile & plan info
+│       ├── components/               # Reusable UI: landing, layout, schema, auth
+│       ├── lib/                      # API client, utilities, api-modules
+│       ├── store/                    # Zustand auth store
+│       └── types/                    # Shared TypeScript interfaces
+│
+├── docker-compose.yml                # Full-stack orchestration
+└── docs/                             # Architecture & DB design docs
 ```
 
 ---
 
-# Database Migration
+## 🛡️ Security
 
-Uses Flyway.
-
-Migration scripts are located in
-
-```
-src/main/resources/db/migration
-```
-
----
-
-# Security Features
-
-- BCrypt Password Hashing
-- JWT Authentication
-- Authorization Filters
-- Owner Validation
-- Team Access Validation
-- Global Exception Handling
+| Layer | Implementation |
+|-------|----------------|
+| **Password Storage** | BCrypt adaptive hashing |
+| **Authentication** | JWT access tokens + refresh token rotation |
+| **Authorization** | Spring Security filter chain + `@PreAuthorize` |
+| **Data Isolation** | Owner validation on every entity operation |
+| **Team Access** | Role-based permission checks (OWNER → VIEWER) |
+| **Input Validation** | Jakarta Bean Validation + global exception handler |
+| **Database** | UUID primary keys, parameterized queries, Flyway migrations |
 
 ---
 
-# Current Progress
+## 🛠 Tech Stack
 
-Completed
+<table>
+<tr>
+<td valign="top">
 
-- Authentication
-- Projects
-- Schema Management
-- AI Generation
-- SQL Export
-- Comments
-- Teams
-- Notifications
+#### Backend
+- Java 21
+- Spring Boot 3.5
+- Spring Security
+- Spring Data JPA / Hibernate
+- Flyway Migrations
+- MapStruct · Lombok
+- SpringDoc OpenAPI 3
 
-In Progress
+</td>
+<td valign="top">
 
-- Activity Feed
-- Audit Logs
-- Real-time Collaboration
-- WebSocket Notifications
+#### Frontend
+- Next.js 15 (App Router)
+- TypeScript 5
+- TailwindCSS 3
+- TanStack React Query
+- Zustand
+- Framer Motion
+- Lucide Icons
 
-Planned
+</td>
+<td valign="top">
 
-- Frontend Dashboard
-- Live Collaboration
-- Schema Diff Viewer
-- Database Reverse Engineering
-- Git Integration
-- API Keys
-- Billing
-- Analytics
+#### Infrastructure
+- PostgreSQL 17
+- Docker & Docker Compose
+- Maven
+- Swagger UI
 
----
+#### AI Providers
+- Google Gemini API
+- Anthropic Claude API
 
-# Future Vision
-
-SchemaForge AI aims to become an end-to-end collaborative database engineering platform where developers can:
-
-- Design databases using AI
-- Collaborate with teams
-- Track schema history
-- Export production SQL
-- Manage versions
-- Receive real-time notifications
-- Deploy database changes
-
----
-
-# Author
-
-**Jawahar Bharathi**
-
-Full Stack Developer
-
-GitHub
-
-https://github.com/Jawahar08
-
-LinkedIn
-
-(Add your LinkedIn URL)
+</td>
+</tr>
+</table>
 
 ---
 
-# License
+## 📡 API Overview
 
-MIT License
+> Full interactive docs available at [`/swagger-ui`](http://localhost:8080/swagger-ui/index.html) when running locally.
+
+| Endpoint Group | Base Path | Description |
+|---------------|-----------|-------------|
+| Auth | `/api/auth/*` | Login, register, token refresh |
+| Users | `/api/users/*` | Profile management |
+| Projects | `/api/projects/*` | CRUD, archive, ownership |
+| Schemas | `/api/schemas/*` | Versions, restore, AI generation |
+| Exports | `/api/exports/*` | Multi-dialect DDL generation |
+| Comments | `/api/schemas/{id}/comments` | Threaded schema discussions |
+| Teams | `/api/teams/*` | Workspaces, members, invitations |
+| Notifications | `/api/notifications/*` | Alerts, read tracking |
+| Activities | `/api/activities/*` | Audit trail, project & team feeds |
+
+---
+
+## 🗺 Roadmap
+
+- [x] JWT Authentication & Authorization
+- [x] Project Management (CRUD + Archive)
+- [x] AI Schema Generation (Gemini + Claude)
+- [x] Multi-Version Schema Management
+- [x] Multi-Dialect SQL Export Engine
+- [x] Threaded Comments & Discussions
+- [x] Team Workspaces & RBAC Invitations
+- [x] Notification System
+- [x] Activity Feed & Audit Trail
+- [x] Full-Stack Frontend (Next.js 15)
+- [ ] WebSocket Real-Time Collaboration
+- [ ] Schema Diff Viewer
+- [ ] Database Reverse Engineering
+- [ ] API Key Management
+- [ ] Usage Analytics Dashboard
+- [ ] Billing & Subscription Plans
+
+---
+
+## 🧑‍💻 Author
+
+<p>
+  <b>Jawahar Bharathi</b> — Full-Stack Developer
+</p>
+<p>
+  <a href="https://github.com/Jawahar08"><img src="https://img.shields.io/badge/GitHub-Jawahar08-181717?style=for-the-badge&logo=github" alt="GitHub" /></a>
+</p>
+
+---
+
+## 📄 License
+
+This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
+
+---
+
+<div align="center">
+
+<img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=12,14,30&height=120&section=footer" width="100%" />
+
+<p>
+  <sub>Built with ☕ Java, ⚡ Spring Boot, ⚛️ Next.js, and 🤖 AI</sub>
+</p>
+
+</div>
